@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->appendToGroup('web', App\Http\Middleware\CheckPermission::class);
+        $middleware->alias(['permission' => App\Http\Middleware\CheckPermission::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
