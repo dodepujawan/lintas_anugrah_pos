@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             CoaSeeder::class,
             McustomerSeeder::class,
             MobilSeeder::class,
+            TransaksiPermissionSeeder::class,
         ]);
     }
 }
