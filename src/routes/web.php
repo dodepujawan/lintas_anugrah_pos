@@ -35,6 +35,28 @@ use App\Http\Controllers\DriverOpeningReceivableController;
 use App\Http\Controllers\DriverReceivableReportController;
 use App\Http\Controllers\AuditSelisihController;
 
+use App\Http\Controllers\KendaraanController;
+use App\Http\Controllers\PriceController;
+use App\Http\Controllers\PriceCusController;
+use App\Http\Controllers\PricedinginController;
+use App\Http\Controllers\PricedingincusController;
+use App\Http\Controllers\ExpedisiController;
+use App\Http\Controllers\ExpedisiInvoiceController;
+use App\Http\Controllers\ExpedisiGenerateInvoiceController;
+use App\Http\Controllers\ExpedisiKwitansiController;
+use App\Http\Controllers\RentPendinginController;
+use App\Http\Controllers\RentPendinginGenerateInvoiceController;
+use App\Http\Controllers\RentPendinginKwitansiController;
+use App\Http\Controllers\CoolroomController;
+use App\Http\Controllers\CoolroomGenerateInvoiceController;
+use App\Http\Controllers\CoolroomKwitansiController;
+use App\Http\Controllers\KwitansiHistoryController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\PajakController;
+use App\Http\Controllers\RekeningController;
+use App\Http\Controllers\SignatureController;
+use App\Http\Controllers\AreaController;
+
 Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route(auth()->user()->defaultAuthorizedRoute());
@@ -521,14 +543,13 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     /*
     | Master Data
     */
-    Route::resource('kendaraan', \App\Http\Controllers\KendaraanController::class)
+    Route::resource('kendaraan', KendaraanController::class)
         ->parameters(['kendaraan' => 'kendaraan']);
 
-    // Price resource (4 jenis: prices, price-customer, price-rent, price-rent-customer)
-    Route::resource('price', \App\Http\Controllers\PriceController::class);
-    Route::resource('price-customer', \App\Http\Controllers\PriceCusController::class);
-    Route::resource('price-rent', \App\Http\Controllers\PricedinginController::class);
-    Route::resource('price-rent-customer', \App\Http\Controllers\PricedingincusController::class);
+    Route::resource('price', PriceController::class);
+    Route::resource('price-customer', PriceCusController::class);
+    Route::resource('price-rent', PricedinginController::class);
+    Route::resource('price-rent-customer', PricedingincusController::class);
 
     /*
     | Expedisi (EKS)
@@ -536,10 +557,10 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |   sidebar_new_expedisi → expedisi.index
     |   sidebar_Invoice_edit_expedisi → expedisi-edit.index (handled via generate-invoice edit)
     */
-    Route::resource('expedisi', \App\Http\Controllers\ExpedisiController::class);
-    Route::get('expedisi/print/surjal/{expedisi}', [\App\Http\Controllers\ExpedisiController::class, 'printSuratJalan'])
+    Route::resource('expedisi', ExpedisiController::class);
+    Route::get('expedisi/print/surjal/{expedisi}', [ExpedisiController::class, 'printSuratJalan'])
         ->name('expedisi.print.surjal');
-    Route::get('expedisi/print/muat', [\App\Http\Controllers\ExpedisiController::class, 'pdfMuat'])
+    Route::get('expedisi/print/muat', [ExpedisiController::class, 'pdfMuat'])
         ->name('expedisi.print.muat');
 
     /*
@@ -547,38 +568,38 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |   sidebar_invoice_expedisi → expedisi-invoice.index
     |   sidebar_Invoice_edit_expedisi → expedisi-edit.index
     */
-    Route::get('expedisi-invoice', [\App\Http\Controllers\ExpedisiInvoiceController::class, 'index'])
+    Route::get('expedisi-invoice', [ExpedisiInvoiceController::class, 'index'])
         ->name('expedisi-invoice.index');
-    Route::post('expedisi-invoice', [\App\Http\Controllers\ExpedisiInvoiceController::class, 'storeGabungInvoice'])
+    Route::post('expedisi-invoice', [ExpedisiInvoiceController::class, 'storeGabungInvoice'])
         ->name('expedisi-invoice.store');
-    Route::get('expedisi-invoice/{noInvoice}/edit', [\App\Http\Controllers\ExpedisiInvoiceController::class, 'updateGabungInvoice'])
+    Route::get('expedisi-invoice/{noInvoice}/edit', [ExpedisiInvoiceController::class, 'updateGabungInvoice'])
         ->name('expedisi-invoice.edit');
-    Route::put('expedisi-invoice/{noInvoice}', [\App\Http\Controllers\ExpedisiInvoiceController::class, 'updateGabungInvoice'])
+    Route::put('expedisi-invoice/{noInvoice}', [ExpedisiInvoiceController::class, 'updateGabungInvoice'])
         ->name('expedisi-invoice.update');
 
     /*
     | Expedisi Generate Invoice (Generate Invoice + AR + Excel)
     |   sidebar_Invoice_gen_expedisi → expedisi-generate-invoice.index
     */
-    Route::resource('expedisi-generate-invoice', \App\Http\Controllers\ExpedisiGenerateInvoiceController::class);
-    Route::get('expedisi-invoice-gen', [\App\Http\Controllers\ExpedisiGenerateInvoiceController::class, 'indexEdit'])
+    Route::resource('expedisi-generate-invoice', ExpedisiGenerateInvoiceController::class);
+    Route::get('expedisi-invoice-gen', [ExpedisiGenerateInvoiceController::class, 'indexEdit'])
         ->name('expedisi-invoice-gen.index');
-    Route::get('expedisi-invoice-gen/{noInvoice}/edit', [\App\Http\Controllers\ExpedisiGenerateInvoiceController::class, 'showEditInvoice'])
+    Route::get('expedisi-invoice-gen/{noInvoice}/edit', [ExpedisiGenerateInvoiceController::class, 'showEditInvoice'])
         ->name('expedisi-invoice-gen.edit');
-    Route::put('expedisi-invoice-gen/{noInvoice}', [\App\Http\Controllers\ExpedisiGenerateInvoiceController::class, 'updateEditInvoice'])
+    Route::put('expedisi-invoice-gen/{noInvoice}', [ExpedisiGenerateInvoiceController::class, 'updateEditInvoice'])
         ->name('expedisi-invoice-gen.update');
 
     /*
     | Expedisi Kwitansi (Pembayaran)
     |   sidebar_Invoice_kwt_expedisi → expedisi-kwitansi.index
     */
-    Route::get('expedisi-kwitansi', [\App\Http\Controllers\ExpedisiKwitansiController::class, 'index'])
+    Route::get('expedisi-kwitansi', [ExpedisiKwitansiController::class, 'index'])
         ->name('expedisi-kwitansi.index');
-    Route::get('expedisi-kwitansi/create', [\App\Http\Controllers\ExpedisiKwitansiController::class, 'index'])
+    Route::get('expedisi-kwitansi/create', [ExpedisiKwitansiController::class, 'index'])
         ->name('expedisi-kwitansi.create');
-    Route::post('expedisi-kwitansi/proses', [\App\Http\Controllers\ExpedisiKwitansiController::class, 'prosesKwitansi'])
+    Route::post('expedisi-kwitansi/proses', [ExpedisiKwitansiController::class, 'prosesKwitansi'])
         ->name('expedisi-kwitansi.proses');
-    Route::delete('expedisi-kwitansi/{kwitansi}', [\App\Http\Controllers\ExpedisiKwitansiController::class, 'deleteKwitansi'])
+    Route::delete('expedisi-kwitansi/{kwitansi}', [ExpedisiKwitansiController::class, 'deleteKwitansi'])
         ->name('expedisi-kwitansi.destroy');
 
     /*
@@ -588,8 +609,8 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |   sidebar_generate_kwt_dingin → rent-pendingin-kwitansi.index
     |   sidebar_Invoice_edit_rent → rent-pendingin-edit.index (use generate-invoice edit)
     */
-    Route::resource('rent-pendingin', \App\Http\Controllers\RentPendinginController::class);
-    Route::get('rent-pendingin/print/surjal', [\App\Http\Controllers\RentPendinginController::class, 'printSurjal'])
+    Route::resource('rent-pendingin', RentPendinginController::class);
+    Route::get('rent-pendingin/print/surjal', [RentPendinginController::class, 'printSurjal'])
         ->name('rent-pendingin.print.surjal');
 
     /*
@@ -597,17 +618,17 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |   sidebar_generate_rent_dingin → rent-pendingin-generate-invoice.index
     |   sidebar_Invoice_edit_rent → rent-pendingin-invoice-gen.edit
     */
-    Route::resource('rent-pendingin-invoice', \App\Http\Controllers\RentPendinginGenerateInvoiceController::class);
-    Route::get('rent-pendingin-invoice-gen', [\App\Http\Controllers\RentPendinginGenerateInvoiceController::class, 'indexEdit'])
+    Route::resource('rent-pendingin-invoice', RentPendinginGenerateInvoiceController::class);
+    Route::get('rent-pendingin-invoice-gen', [RentPendinginGenerateInvoiceController::class, 'indexEdit'])
         ->name('rent-pendingin-invoice-gen.index');
-    Route::get('rent-pendingin-invoice-gen/{noInvoice}/edit', [\App\Http\Controllers\RentPendinginGenerateInvoiceController::class, 'showEditInvoiceRen'])
+    Route::get('rent-pendingin-invoice-gen/{noInvoice}/edit', [RentPendinginGenerateInvoiceController::class, 'showEditInvoiceRen'])
         ->name('rent-pendingin-invoice-gen.edit');
 
     /*
     | Rent Pendingin Kwitansi
     |   sidebar_generate_kwt_dingin → rent-pendingin-kwitansi.index
     */
-    Route::resource('rent-pendingin-kwitansi', \App\Http\Controllers\RentPendinginKwitansiController::class);
+    Route::resource('rent-pendingin-kwitansi', RentPendinginKwitansiController::class);
 
     /*
     | Coolroom
@@ -616,61 +637,61 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |   sidebar_coolroom_kwt → coolroom-kwitansi.index
     |   sidebar_coolroom_edit → coolroom-invoice-gen.edit
     */
-    Route::resource('coolroom', \App\Http\Controllers\CoolroomController::class);
-    Route::get('coolroom/print/pdf', [\App\Http\Controllers\CoolroomController::class, 'print'])
+    Route::resource('coolroom', CoolroomController::class);
+    Route::get('coolroom/print/pdf', [CoolroomController::class, 'print'])
         ->name('coolroom.print.pdf');
-    Route::post('coolroom/customer/search', [\App\Http\Controllers\CoolroomController::class, 'getDataCustomer'])
+    Route::post('coolroom/customer/search', [CoolroomController::class, 'getDataCustomer'])
         ->name('coolroom.customer.search');
 
-    Route::resource('coolroom-invoice', \App\Http\Controllers\CoolroomGenerateInvoiceController::class);
-    Route::get('coolroom-invoice-gen/{noInvoice}/edit', [\App\Http\Controllers\CoolroomGenerateInvoiceController::class, 'showEditInvoiceCoolroom'])
+    Route::resource('coolroom-invoice', CoolroomGenerateInvoiceController::class);
+    Route::get('coolroom-invoice-gen/{noInvoice}/edit', [CoolroomGenerateInvoiceController::class, 'showEditInvoiceCoolroom'])
         ->name('coolroom-invoice-gen.edit');
 
-    Route::resource('coolroom-kwitansi', \App\Http\Controllers\CoolroomKwitansiController::class);
+    Route::resource('coolroom-kwitansi', CoolroomKwitansiController::class);
 
     /*
     | Kwitansi History
     |   sidebar_new_kwitansi → kwitansi-history.index
     */
-    Route::resource('kwitansi-history', \App\Http\Controllers\KwitansiHistoryController::class);
-    Route::get('kwitansi-history/export', [\App\Http\Controllers\KwitansiHistoryController::class, 'exportKwitansi'])
+    Route::resource('kwitansi-history', KwitansiHistoryController::class);
+    Route::get('kwitansi-history/export', [KwitansiHistoryController::class, 'exportKwitansi'])
         ->name('kwitansi-history.export');
 
     /*
     | Service
     |   sidebar_new_service → service.index
     */
-    Route::resource('service', \App\Http\Controllers\ServiceController::class);
-    Route::post('service/supplier', [\App\Http\Controllers\ServiceController::class, 'dataSupplier'])
+    Route::resource('service', ServiceController::class);
+    Route::post('service/supplier', [ServiceController::class, 'dataSupplier'])
         ->name('service.data.supplier');
-    Route::post('service/kendaraan', [\App\Http\Controllers\ServiceController::class, 'dataKendaraan'])
+    Route::post('service/kendaraan', [ServiceController::class, 'dataKendaraan'])
         ->name('service.data.kendaraan');
 
     /*
     | Extra (Pajak, Rekening, Signature, Area)
     |   sidebar_extra_pajak, sidebar_extra_rekening, sidebar_extra_signature, sidebar_extra_area
     */
-    Route::get('pajak', [\App\Http\Controllers\PajakController::class, 'get'])
+    Route::get('pajak', [PajakController::class, 'get'])
         ->name('pajak.get');
-    Route::put('pajak', [\App\Http\Controllers\PajakController::class, 'update'])
+    Route::put('pajak', [PajakController::class, 'update'])
         ->name('pajak.update');
 
-    Route::resource('rekening', \App\Http\Controllers\RekeningController::class);
-    Route::get('rekening/pilih/{id}', [\App\Http\Controllers\RekeningController::class, 'pilih'])
+    Route::resource('rekening', RekeningController::class);
+    Route::get('rekening/pilih/{id}', [RekeningController::class, 'pilih'])
         ->name('rekening.pilih');
 
-    Route::get('signature', [\App\Http\Controllers\SignatureController::class, 'get'])
+    Route::get('signature', [SignatureController::class, 'get'])
         ->name('signature.get');
-    Route::put('signature', [\App\Http\Controllers\SignatureController::class, 'update'])
+    Route::put('signature', [SignatureController::class, 'update'])
         ->name('signature.update');
 
-    Route::get('area', [\App\Http\Controllers\AreaController::class, 'get'])
+    Route::get('area', [AreaController::class, 'get'])
         ->name('area.get');
-    Route::post('area', [\App\Http\Controllers\AreaController::class, 'store'])
+    Route::post('area', [AreaController::class, 'store'])
         ->name('area.store');
-    Route::put('area/{area}', [\App\Http\Controllers\AreaController::class, 'update'])
+    Route::put('area/{area}', [AreaController::class, 'update'])
         ->name('area.update');
-    Route::delete('area/{area}', [\App\Http\Controllers\AreaController::class, 'destroy'])
+    Route::delete('area/{area}', [AreaController::class, 'destroy'])
         ->name('area.destroy');
 });
 
