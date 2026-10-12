@@ -1,0 +1,23 @@
+services:
+  app:
+    restart: "no"
+    user: "1000:1000"   # ✅ biar tidak permission error di VS Code lokal
+    volumes:
+      - ./src:/var/www/html/src
+      - ./logs/php:/var/log/php
+  web:
+    restart: "no"
+    ports:
+      - "8007:80"   # ⬅️ hanya aktif di local
+  nginxproxymanager:
+    ports:
+      - "8080:81"   # GUI NPM local (akses http://127.0.0.1:8080)
+    restart: "no"        # ⬅️ di lokal: biar gak auto hidup terus
+  # ❌ Matikan MySQL di LOCAL
+  db:
+    restart: "no"
+    image: alpine:3.20
+    command: ["sh", "-c", "exit 0"]
+    ports: []
+    volumes: []
+

@@ -1,0 +1,5 @@
+<?php
+use App\Models\Menu;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+return new class extends Migration {public function up():void{$m=Menu::updateOrCreate(['route_name'=>'laporan.driver-receivables'],['name'=>'Laporan Piutang Sopir','section'=>'Laporan','icon'=>'bi bi-file-earmark-bar-graph','sort_order'=>22,'description'=>'Laporan saldo dan pelunasan piutang sopir.','is_sidebar'=>true]);$source=Menu::where('route_name','driver-receivables')->value('id');if($source)foreach(DB::table('role_menu')->where('menu_id',$source)->get()as$p)DB::table('role_menu')->updateOrInsert(['role_id'=>$p->role_id,'menu_id'=>$m->id],['can_view'=>$p->can_view,'can_create'=>false,'can_edit'=>false,'can_delete'=>false,'can_post'=>false,'can_void'=>false,'can_export'=>$p->can_export,'created_at'=>now(),'updated_at'=>now()]);}public function down():void{$m=Menu::where('route_name','laporan.driver-receivables')->first();if($m){DB::table('role_menu')->where('menu_id',$m->id)->delete();$m->delete();}}};

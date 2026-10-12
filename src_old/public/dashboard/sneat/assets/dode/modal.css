@@ -1,0 +1,612 @@
+/* =================================
+   REUSABLE MODAL FORM STYLES
+   Hanya berlaku untuk elemen di dalam .modal
+   ================================= */
+
+/* Modal Customization */
+.modal .modal-xl {
+    max-width: 1200px;
+}
+
+.modal .modal-content {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Modal Header */
+.modal .modal-header {
+    background: linear-gradient(135deg, #1e7e8c 0%, #2596a8 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    padding: 1.25rem 1.5rem;
+    border-bottom: none;
+}
+
+.modal .modal-header .modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: white;
+}
+
+/* Fix btn-close: Background merah dengan X putih */
+
+.modal .modal-header .btn-close {
+    background: #dc3545 !important;
+    opacity: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    position: relative;
+    filter: none;
+    transform: none;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.modal .modal-header .btn-close::before,
+.modal .modal-header .btn-close::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 2.5px;
+    background-color: white;
+}
+
+.modal .modal-header .btn-close::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.modal .modal-header .btn-close::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.modal .modal-header .btn-close:hover {
+    background: #bb2d3b !important;
+    transform: none;
+}
+
+.modal .modal-header .btn-close:focus,
+.modal .modal-header .btn-close:active {
+    transform: none;
+}
+
+.modal .modal-header .btn-close:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(15, 24, 48, 0.55);
+}
+
+.modal .modal-header .btn-close:hover::before,
+.modal .modal-header .btn-close:hover::after {
+    background-color: white;
+}
+
+/* SOLUSI ALTERNATIF: Custom Close Button dengan teks X */
+.modal .modal-header .btn-close-custom {
+    background: none;
+    border: 2px solid white;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.modal .modal-header .btn-close-custom:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: none;
+}
+
+.modal .modal-header .btn-close-custom:focus,
+.modal .modal-header .btn-close-custom:active {
+    transform: none;
+}
+
+/* Modal Body */
+.modal .modal-body {
+    padding: 2rem 1.5rem;
+    background-color: #f8f9fa;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Section Headers */
+.modal .modal-body h5 {
+    color: #1e7e8c;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #2596a8;
+    margin-bottom: 1.5rem;
+}
+
+/* Form Groups & Labels */
+.modal .form-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.modal .form-label .text-danger {
+    color: #dc3545 !important;
+    margin-left: 2px;
+}
+
+/* Form Controls */
+.modal .form-control,
+.modal .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    background-color: #e8f5f0;
+}
+
+.modal .form-control:focus,
+.modal .form-select:focus {
+    border-color: #2596a8;
+    box-shadow: 0 0 0 0.2rem rgba(37, 150, 168, 0.15);
+    background-color: white;
+}
+
+.modal .form-control::placeholder {
+    color: #a0a0a0;
+    font-size: 0.85rem;
+}
+
+/* Textarea specific */
+.modal textarea.form-control {
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* Input groups for combined fields */
+.modal .input-group .form-control {
+    border-right: none;
+}
+
+.modal .input-group-text {
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-left: none;
+    color: #495057;
+    font-size: 0.85rem;
+}
+
+/* Row spacing */
+.modal .modal-body .row.mb-4 {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.modal .modal-body .row.mb-4:not(:last-child) {
+    margin-bottom: 1.5rem !important;
+}
+
+/* Alert Messages */
+.modal .alert {
+    border-radius: 6px;
+    padding: 0.9rem 1.2rem;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.modal .alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c2c7;
+    color: #842029;
+}
+
+/* Modal Footer */
+.modal .modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Buttons - HANYA di dalam modal */
+.modal .btn {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.modal .btn:hover,
+.modal .btn:focus,
+.modal .btn:active {
+    transform: none;
+}
+
+.modal .btn:focus-visible {
+    outline: 2px solid #1e7e8c;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(30, 126, 140, 0.2);
+}
+
+.modal .btn-primary {
+    background: linear-gradient(135deg, #1e7e8c 0%, #2596a8 100%);
+    border: none;
+    color: white;
+}
+
+.modal .btn-primary:hover {
+    background: linear-gradient(135deg, #176872 0%, #1e7e8c 100%);
+    box-shadow: 0 2px 6px rgba(30, 126, 140, 0.2);
+}
+
+.modal .btn-secondary {
+    background-color: #6c757d;
+    border: none;
+    color: white;
+}
+
+.modal .btn-secondary:hover {
+    background-color: #5a6268;
+    box-shadow: 0 2px 6px rgba(108, 117, 125, 0.2);
+}
+
+/* Utility Classes for consistent spacing */
+.modal .section-divider {
+    height: 2px;
+    background: linear-gradient(90deg, #2596a8 0%, transparent 100%);
+    margin: 1.5rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modal .modal-body {
+        padding: 1.5rem 1rem;
+    }
+
+    .modal .modal-body .row.mb-4 {
+        padding: 1rem;
+    }
+
+    .modal .form-label {
+        font-size: 0.75rem;
+    }
+
+    .modal .form-control {
+        font-size: 0.85rem;
+        padding: 0.55rem 0.75rem;
+    }
+}
+
+/* Scrollbar styling for modal body */
+.modal .modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal .modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.modal .modal-body::-webkit-scrollbar-thumb {
+    background: #2596a8;
+    border-radius: 4px;
+}
+
+.modal .modal-body::-webkit-scrollbar-thumb:hover {
+    background: #1e7e8c;
+}
+
+/* Loading state (optional) */
+.modal .form-control:disabled {
+    background-color: #e9ecef;
+    opacity: 0.7;
+}
+
+/* Validation states */
+.modal .form-control.is-invalid {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.modal .form-control.is-valid {
+    border-color: #28a745;
+    background-color: #f0fff4;
+}
+
+.modal .invalid-feedback {
+    font-size: 0.8rem;
+    color: #dc3545;
+    margin-top: 0.25rem;
+}
+
+.modal .valid-feedback {
+    font-size: 0.8rem;
+    color: #28a745;
+    margin-top: 0.25rem;
+}
+
+/* Compact customer picker without changing buttons in other modals. */
+#customerModalExp .modal-body {
+    padding: 1rem;
+}
+
+#customerModalExp #modalCusExpTable {
+    table-layout: fixed;
+    margin-bottom: 0;
+}
+
+#customerModalExp #modalCusExpTable th,
+#customerModalExp #modalCusExpTable td {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    vertical-align: middle;
+}
+
+#customerModalExp #modalCusExpTable th:nth-child(1),
+#customerModalExp #modalCusExpTable td:nth-child(1) {
+    width: 56px;
+    text-align: center;
+}
+
+#customerModalExp #modalCusExpTable th:nth-child(2),
+#customerModalExp #modalCusExpTable td:nth-child(2) {
+    width: 135px;
+}
+
+#customerModalExp #modalCusExpTable th:nth-child(3),
+#customerModalExp #modalCusExpTable td:nth-child(3) {
+    width: 250px;
+    overflow-wrap: anywhere;
+}
+
+#customerModalExp #modalCusExpTable th:nth-child(4),
+#customerModalExp #modalCusExpTable td:nth-child(4) {
+    width: 150px;
+    overflow-wrap: anywhere;
+}
+
+#customerModalExp #modalCusExpTable th:nth-child(5),
+#customerModalExp #modalCusExpTable td:nth-child(5) {
+    width: 150px;
+}
+
+#customerModalExp #modalCusExpTable th:nth-child(6),
+#customerModalExp #modalCusExpTable td:nth-child(6) {
+    width: 220px;
+    overflow-wrap: anywhere;
+}
+
+#customerModalExp #modalCusExpTable th:nth-child(7),
+#customerModalExp #modalCusExpTable td:nth-child(7) {
+    width: 68px;
+    text-align: center;
+}
+
+#customerModalExp .view-btn-customer-expedisi {
+    display: inline-flex;
+    width: 36px;
+    height: 34px;
+    min-width: 36px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+@media (max-width: 767.98px) {
+    #customerModalExp .modal-body {
+        padding: 0.75rem;
+    }
+
+    #customerModalExp #modalCusExpTable th,
+    #customerModalExp #modalCusExpTable td {
+        padding: 0.45rem 0.5rem;
+        font-size: 0.8125rem;
+    }
+}
+
+/* Compact Rent Pendingin customer picker and keep scrolling in DataTables. */
+#customerModalDgn .modal-body {
+    padding: 1rem;
+}
+
+#customerModalDgn .modal-header .btn-close {
+    box-sizing: border-box;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+}
+
+#customerModalDgn #modalCusDgnTable {
+    table-layout: fixed;
+    margin-bottom: 0;
+}
+
+#customerModalDgn #modalCusDgnTable th,
+#customerModalDgn #modalCusDgnTable td {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    vertical-align: middle;
+}
+
+#customerModalDgn #modalCusDgnTable th:nth-child(1),
+#customerModalDgn #modalCusDgnTable td:nth-child(1) {
+    width: 56px;
+    text-align: center;
+}
+
+#customerModalDgn #modalCusDgnTable th:nth-child(2),
+#customerModalDgn #modalCusDgnTable td:nth-child(2) {
+    width: 135px;
+}
+
+#customerModalDgn #modalCusDgnTable th:nth-child(3),
+#customerModalDgn #modalCusDgnTable td:nth-child(3) {
+    width: 250px;
+    overflow-wrap: anywhere;
+}
+
+#customerModalDgn #modalCusDgnTable th:nth-child(4),
+#customerModalDgn #modalCusDgnTable td:nth-child(4) {
+    width: 150px;
+    overflow-wrap: anywhere;
+}
+
+#customerModalDgn #modalCusDgnTable th:nth-child(5),
+#customerModalDgn #modalCusDgnTable td:nth-child(5) {
+    width: 150px;
+}
+
+#customerModalDgn #modalCusDgnTable th:nth-child(6),
+#customerModalDgn #modalCusDgnTable td:nth-child(6) {
+    width: 220px;
+    overflow-wrap: anywhere;
+}
+
+#customerModalDgn #modalCusDgnTable th:nth-child(7),
+#customerModalDgn #modalCusDgnTable td:nth-child(7) {
+    width: 68px;
+    text-align: center;
+}
+
+#customerModalDgn .view-btn-customer-rent-dingin {
+    display: inline-flex;
+    width: 36px;
+    height: 34px;
+    min-width: 36px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+@media (max-width: 767.98px) {
+    #customerModalDgn .modal-body {
+        padding: 0.75rem;
+    }
+
+    #customerModalDgn #modalCusDgnTable th,
+    #customerModalDgn #modalCusDgnTable td {
+        padding: 0.45rem 0.5rem;
+        font-size: 0.8125rem;
+    }
+}
+
+/* Compact Coolroom customer picker and keep scrolling in DataTables. */
+#customerModalCool .modal-body {
+    padding: 1rem;
+}
+
+#customerModalCool .modal-header .btn-close {
+    box-sizing: border-box;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+}
+
+#customerModalCool #modalCusCoolTable {
+    table-layout: fixed;
+    margin-bottom: 0;
+}
+
+#customerModalCool #modalCusCoolTable th,
+#customerModalCool #modalCusCoolTable td {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    vertical-align: middle;
+}
+
+#customerModalCool #modalCusCoolTable th:nth-child(1),
+#customerModalCool #modalCusCoolTable td:nth-child(1) {
+    width: 56px;
+    text-align: center;
+}
+
+#customerModalCool #modalCusCoolTable th:nth-child(2),
+#customerModalCool #modalCusCoolTable td:nth-child(2) {
+    width: 135px;
+}
+
+#customerModalCool #modalCusCoolTable th:nth-child(3),
+#customerModalCool #modalCusCoolTable td:nth-child(3) {
+    width: 250px;
+    overflow-wrap: anywhere;
+}
+
+#customerModalCool #modalCusCoolTable th:nth-child(4),
+#customerModalCool #modalCusCoolTable td:nth-child(4) {
+    width: 150px;
+    overflow-wrap: anywhere;
+}
+
+#customerModalCool #modalCusCoolTable th:nth-child(5),
+#customerModalCool #modalCusCoolTable td:nth-child(5) {
+    width: 150px;
+}
+
+#customerModalCool #modalCusCoolTable th:nth-child(6),
+#customerModalCool #modalCusCoolTable td:nth-child(6) {
+    width: 220px;
+    overflow-wrap: anywhere;
+}
+
+#customerModalCool #modalCusCoolTable th:nth-child(7),
+#customerModalCool #modalCusCoolTable td:nth-child(7) {
+    width: 68px;
+    text-align: center;
+}
+
+#customerModalCool .view-btn-customer-coolroom {
+    display: inline-flex;
+    width: 36px;
+    height: 34px;
+    min-width: 36px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+@media (max-width: 767.98px) {
+    #customerModalCool .modal-body {
+        padding: 0.75rem;
+    }
+
+    #customerModalCool #modalCusCoolTable th,
+    #customerModalCool #modalCusCoolTable td {
+        padding: 0.45rem 0.5rem;
+        font-size: 0.8125rem;
+    }
+}

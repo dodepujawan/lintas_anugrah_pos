@@ -1,0 +1,173 @@
+PANDUAN PROSES PELUNASAN PIUTANG
+=================================
+
+Panduan ini digunakan untuk mencatat uang yang diterima dari customer atas satu atau beberapa invoice yang masih mempunyai saldo, termasuk PPh Pasal 23, kerugian pembayaran, dan administrasi bank.
+
+
+1. PERSIAPAN MAPPING
+--------------------
+
+Pastikan mapping kelompok Pelunasan Piutang sudah diatur:
+
+- Piutang Usaha: akun Piutang Usaha.
+- Kas: akun penerimaan metode Cash.
+- Bank Transfer: 01010201 - Bank BCA Rek 6115352010.
+- PPh Pasal 23: 01010502 - PPh Pasal 23.
+- Kerugian Pembayaran: 05040103 - Kerugian Pembayaran Piutang.
+- Administrasi Bank: 05040102 - Beban Administrasi Bank.
+
+Mapping hanya boleh menggunakan akun aktif dengan level Akun Posting.
+
+
+2. MEMBUKA FORM
+---------------
+
+1. Buka menu Piutang > Pelunasan Piutang.
+2. Klik Tambah Pelunasan.
+3. Jenis pembayaran awal adalah Transfer.
+4. Akun pembayaran otomatis mengikuti mapping Bank Transfer Pelunasan Piutang.
+
+Jika metode diubah:
+
+- Cash menggunakan mapping Kas.
+- Transfer menggunakan mapping Bank Transfer Pelunasan Piutang.
+- Giro, Cek, dan QRIS menggunakan mapping Bank.
+
+Akun pembayaran dapat diganti manual jika dana masuk ke akun lain.
+
+
+3. MEMILIH CUSTOMER
+-------------------
+
+Customer dapat dipilih dengan mengetik minimal dua karakter atau melalui tombol pencarian. Modal pencarian langsung menampilkan seluruh customer dan dapat disaring berdasarkan kode atau nama.
+
+Setelah customer dipilih, pastikan nama customer terisi lalu klik Cari Invoice. Hanya invoice yang masih mempunyai saldo yang ditampilkan.
+
+
+4. PENGERTIAN NILAI PEMBAYARAN
+------------------------------
+
+Uang Diterima
+Uang bersih yang benar-benar masuk ke kas atau rekening bank setelah potongan.
+
+PPh 23
+PPh Pasal 23 yang dipotong customer berdasarkan bukti potong.
+
+Kerugian
+Potongan atau selisih yang diakui sebagai Kerugian Pembayaran Piutang.
+
+Administrasi Bank
+Biaya administrasi bank yang mengurangi uang masuk.
+
+Rumus:
+
+Total Pelunasan = Uang Diterima + PPh 23 + Kerugian + Administrasi Bank
+
+Total tersebut tidak boleh melebihi saldo invoice.
+
+Contoh:
+
+Saldo invoice   : 1.400.000
+Uang diterima   : 1.350.000
+PPh 23          : 28.000
+Kerugian        : 12.000
+Administrasi    : 10.000
+Total pelunasan : 1.400.000
+Sisa invoice    : 0
+
+PPh 23 harus mengikuti bukti potong dan tidak boleh langsung diasumsikan 2% dari saldo invoice.
+
+
+5. MENGISI INVOICE
+------------------
+
+1. Isi nilai hanya pada invoice yang dibayar. Invoice lain boleh tetap nol.
+2. Satu pembayaran dapat dialokasikan ke beberapa invoice customer yang sama.
+3. Pembayaran sebagian diperbolehkan dan menyisakan saldo invoice.
+4. Angka otomatis diberi pemisah ribuan setelah keluar dari input.
+5. Nilai tidak dapat melebihi saldo invoice.
+
+Navigasi:
+
+- Enter berpindah ke kolom berikutnya.
+- Shift+Enter kembali ke kolom sebelumnya.
+- Enter tidak menyimpan transaksi.
+- Transaksi hanya disimpan melalui tombol Simpan Pelunasan.
+
+Jika Enter ditekan pada kolom Administrasi Bank dan total belum sama dengan saldo, aplikasi menampilkan saldo, total input, dan sisa. Pilih OK jika memang pembayaran sebagian atau Batal untuk memperbaiki nilai.
+
+
+6. VALIDASI SEBELUM MENYIMPAN
+-----------------------------
+
+Pastikan:
+
+- Uang diterima lebih dari nol.
+- Tidak ada nilai negatif.
+- Total setiap invoice tidak melebihi saldo.
+- Akun PPh 23 dipilih jika PPh 23 diisi.
+- Akun Kerugian dipilih jika nilai Kerugian diisi.
+- Akun Administrasi Bank dipilih jika administrasi diisi.
+- Total footer sesuai bukti pembayaran.
+- Nomor referensi dan keterangan sudah diperiksa.
+
+Klik Simpan Pelunasan setelah seluruh data benar.
+
+
+7. JURNAL OTOMATIS
+------------------
+
+Debit  Kas/Bank                      = Uang Diterima
+Debit  PPh Pasal 23                  = PPh 23
+Debit  Kerugian Pembayaran Piutang   = Kerugian
+Debit  Beban Administrasi Bank       = Administrasi Bank
+Kredit Piutang Usaha                 = Total Pelunasan
+
+Nomor pembayaran menggunakan awalan AR. Nomor jurnal dapat dilihat pada halaman Detail.
+
+
+8. PEMERIKSAAN HASIL
+--------------------
+
+1. Buka Detail transaksi.
+2. Periksa customer, invoice, seluruh komponen pembayaran, dan nomor jurnal.
+3. Periksa Laporan Piutang.
+4. Cocokkan Uang Diterima dengan mutasi kas atau bank.
+
+
+9. EDIT, KOREKSI, DAN PEMBATALAN
+--------------------------------
+
+Pelunasan dapat diedit walaupun sudah dijurnal jika:
+
+- Transaksi tidak berstatus VOID.
+- Tahun transaksi lama belum ditutup.
+- Tanggal baru berada pada tahun yang belum ditutup.
+- User mempunyai izin Edit Pelunasan Piutang.
+
+Saat update disimpan, aplikasi mengembalikan alokasi lama, menerapkan alokasi baru, dan membuat ulang jurnal dalam satu transaksi database. Seluruh komponen Uang Diterima, PPh 23, Kerugian, dan Administrasi Bank dapat diperbarui.
+
+Gunakan pembatalan jika transaksi memang harus ditiadakan:
+
+Pembatalan hanya tersedia untuk user yang mempunyai izin Void Pelunasan Piutang dan transaksi masih berada pada tahun/periode yang belum ditutup.
+
+1. Buka Detail Pelunasan.
+2. Isi alasan pembatalan minimal 10 karakter.
+3. Klik Batalkan Pelunasan.
+4. Sistem membuat status VOID, mengembalikan saldo invoice, dan membuat jurnal pembalik.
+
+Jangan mengubah saldo invoice atau jurnal secara manual.
+
+
+10. CHECKLIST
+-------------
+
+[ ] Tanggal dan customer sudah benar.
+[ ] Invoice sudah benar.
+[ ] Uang Diterima sesuai uang bersih yang masuk.
+[ ] PPh 23 sesuai bukti potong.
+[ ] Kerugian dan administrasi bank memiliki dasar yang jelas.
+[ ] Total tidak melebihi saldo invoice.
+[ ] Akun dan nomor referensi sudah benar.
+[ ] Jurnal berhasil terbentuk.
+[ ] Saldo laporan piutang sudah sesuai.

@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>INVOICE FINLEDGER</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #eef2f7;
+            color: #111827;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            line-height: 1.32;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 0;
+            margin: 12px auto;
+            padding: 11mm 13mm;
+            background: #ffffff;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, .14);
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            border-bottom: 3px solid #1d4ed8;
+            padding-bottom: 10px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            color: #1d4ed8;
+            font-size: 25px;
+            letter-spacing: .08em;
+        }
+
+        .app-logo-text {
+            display: inline-block;
+            margin-top: 4px;
+            color: #d4a017;
+            font-size: 23px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: 0;
+            text-shadow: 0 1px 0 #fff1a8;
+        }
+
+        .app-logo-text .brand-fin {
+            font-style: italic;
+            font-weight: 600;
+        }
+
+        .app-logo-text .brand-ledger {
+            font-weight: 800;
+        }
+
+        .brand p,
+        .invoice-meta p,
+        .party p {
+            margin: 3px 0;
+        }
+
+        .invoice-meta {
+            min-width: 220px;
+            text-align: right;
+        }
+
+        .invoice-meta .label {
+            color: #6b7280;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .invoice-meta .value {
+            font-weight: 700;
+        }
+
+        .parties {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+            margin-top: 14px;
+        }
+
+        .party {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .party h2 {
+            margin: 0 0 6px;
+            color: #374151;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+        }
+
+        th {
+            background: #1d4ed8;
+            color: #ffffff;
+            padding: 7px 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        td {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 8px;
+            vertical-align: top;
+        }
+
+        .right {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .summary {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .summary table {
+            width: 320px;
+            margin: 0;
+        }
+
+        .summary td {
+            padding: 5px 8px;
+        }
+
+        .summary .grand-total td {
+            border-top: 2px solid #1d4ed8;
+            border-bottom: 0;
+            color: #1d4ed8;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .notes {
+            display: grid;
+            grid-template-columns: 1.2fr .8fr;
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .box {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .box h3 {
+            margin: 0 0 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #374151;
+        }
+
+        .signature {
+            margin-top: 18px;
+            text-align: center;
+        }
+
+        .signature-line {
+            border-top: 1px solid #111827;
+            margin-top: 32px;
+            padding-top: 6px;
+            font-weight: 700;
+        }
+
+        .toolbar {
+            width: 210mm;
+            margin: 24px auto 0;
+            text-align: right;
+        }
+
+        .toolbar button {
+            border: 0;
+            border-radius: 6px;
+            background: #1d4ed8;
+            color: #ffffff;
+            cursor: pointer;
+            padding: 9px 14px;
+            font-weight: 700;
+        }
+
+        [contenteditable="true"] {
+            outline: 1px dashed transparent;
+            outline-offset: 2px;
+        }
+
+        [contenteditable="true"]:hover,
+        [contenteditable="true"]:focus {
+            outline-color: #93c5fd;
+            background: #eff6ff;
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 12mm;
+            }
+
+            body {
+                background: #ffffff;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .toolbar {
+                display: none;
+            }
+
+            .page {
+                width: auto;
+                min-height: auto;
+                margin: 0;
+                padding: 8mm 10mm;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button type="button" onclick="window.print()">Cetak / Simpan PDF</button>
+    </div>
+
+    <main class="page">
+        <section class="topbar">
+            <div class="brand">
+                <h1>INVOICE</h1>
+                <div class="app-logo-text" aria-label="FINLEDGER"><span class="brand-fin">Fin</span><span class="brand-ledger">Ledger</span></div>
+                <p contenteditable="true"><strong>Jasa Pembuatan & Pengembangan Aplikasi Akuntansi</strong></p>
+                <p contenteditable="true">FINLEDGER adalah aplikasi pencatatan jurnal, piutang, hutang, laporan keuangan, dan fitur pendukung operasional.</p>
+            </div>
+            <div class="invoice-meta">
+                <p class="label">Nomor Invoice</p>
+                <p class="value" contenteditable="true">INV/APP-AKT/001/2026</p>
+                <p class="label">Tanggal</p>
+                <p class="value" contenteditable="true">29 Juli 2026</p>
+            </div>
+        </section>
+
+        <section class="parties">
+            <div class="party">
+                <h2>Ditagihkan Kepada</h2>
+                <p contenteditable="true"><strong>Bapak. Anom</strong></p>
+                <p contenteditable="true">PT. LINTAS ANUGERAH SEJATI</p>
+                <p contenteditable="true">Denpasar</p>
+            </div>
+            <div class="party">
+                <h2>Dari</h2>
+                <p contenteditable="true"><strong>Dewa Nyoman Sukariawan</strong></p>
+                <p contenteditable="true">Programmer</p>
+                <p contenteditable="true">No. HP: 081933077273</p>
+                <p contenteditable="true">Email: dwrian@gmail.com</p>
+            </div>
+        </section>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 42px;">No</th>
+                    <th>Uraian</th>
+                    <th class="right" style="width: 150px;">Jumlah</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td contenteditable="true">
+                        Pembuatan program aplikasi akuntansi FINLEDGER berbasis web, meliputi modul jurnal umum,
+                        saldo awal, piutang, hutang, pelunasan, laporan keuangan, export data, dan fitur pendukung operasional.
+                    </td>
+                    <td class="right" contenteditable="true">Rp 8.500.000</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td contenteditable="true">
+                        Implementasi, pengujian aplikasi, pengambilan data saldo awal, setting server aplikasi di hosting,
+                        serta aplikasi bridging import data dari server local penjualan ke hosting.
+                    </td>
+                    <td class="right" contenteditable="true">Rp 2.500.000</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td contenteditable="true">
+                        Biaya hosting aplikasi selama 1 tahun dengan spesifikasi RAM 2GB, SSD 40GB,
+                        2 core processor, dan sistem topup.
+                    </td>
+                    <td class="right" contenteditable="true">Rp 2.500.000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <section class="summary">
+            <table>
+                <tr>
+                    <td>Subtotal</td>
+                    <td class="right" contenteditable="true">Rp 13.500.000</td>
+                </tr>
+                <tr>
+                    <td>Diskon</td>
+                    <td class="right" contenteditable="true">Rp 1.000.000</td>
+                </tr>
+                <tr class="grand-total">
+                    <td>Total Tagihan</td>
+                    <td class="right" contenteditable="true">Rp 12.500.000</td>
+                </tr>
+            </table>
+        </section>
+
+        <section class="notes">
+            <div class="box">
+                <h3>Catatan</h3>
+                <p contenteditable="true">
+                    Pembayaran dapat dilakukan melalui transfer bank. Invoice ini dibuat sebagai tagihan atas pekerjaan
+                    pembuatan dan pengembangan aplikasi akuntansi perusahaan.
+                </p>
+            </div>
+            <div class="box">
+                <h3>Rekening Pembayaran</h3>
+                <p contenteditable="true">Bank: BCA</p>
+                <p contenteditable="true">No. Rekening: 7680532901</p>
+                <p contenteditable="true">Atas Nama: I DEWA NYOMAN SUKARIAWAN</p>
+            </div>
+        </section>
+
+        <section class="signature">
+            <p>Hormat kami,</p>
+            <div class="signature-line" contenteditable="true">I DEWA NYOMAN SUKARIAWAN</div>
+        </section>
+    </main>
+</body>
+</html>

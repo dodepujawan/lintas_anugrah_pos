@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Background Oranye dengan Rounded Corner -->
+  <rect width="24" height="24" rx="6" fill="#FF9F1C" />
+
+  <!-- Ikon Truk Kargo -->
+  <g fill="none" stroke="#1E1E1E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" transform="translate(1.5, 1.5) scale(0.875)">
+    <path d="M3 16V6a1 1 0 0 1 1-1h9v11"/>
+    <path d="M13 9h4l4 4v3a1 1 0 0 1-1 1h-1"/>
+    <circle cx="7.5" cy="17.5" r="1.8"/>
+    <circle cx="17.5" cy="17.5" r="1.8"/>
+  </g>
+</svg>

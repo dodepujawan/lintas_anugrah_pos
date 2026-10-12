@@ -1,0 +1,92 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\Price as PriceModel;
+use App\Models\PriceCus;
+use App\Models\PriceCushis;
+use Illuminate\Http\Request;
+
+class PriceController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    public function index(Request $request)
+    {
+        $search = trim((string) $request->input('search'));
+        $prices = PriceModel::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('FROM', 'like', "%{$search}%")
+                    ->orWhere('TO', 'like', "%{$search}%");
+            })
+            ->orderBy('FROM')
+            ->orderBy('TO')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('price.index', compact('prices', 'search'));
+    }
+
+    public function create()
+    {
+        return view('price.create');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'FROM' => 'required|string|max:30',
+            'TO' => 'required|string|max:30',
+            'HARGA' => 'required|numeric',
+            'TANGGAL' => 'nullable|string|max:1',
+        ]);
+
+        $user = $request->user()->name ?? 'system';
+        $validated['USER'] = $user;
+        $validated['USEREDIT'] = $user;
+
+        PriceModel::create($validated);
+
+        return redirect()->route('price.index')
+            ->with('success', 'Price berhasil ditambahkan.');
+    }
+
+    public function show(PriceModel $price)
+    {
+        return view('price.show', compact('price'));
+    }
+
+    public function edit(PriceModel $price)
+    {
+        return view('price.edit', compact('price'));
+    }
+
+    public function update(Request $request, PriceModel $price)
+    {
+        $validated = $request->validate([
+            'FROM' => 'required|string|max:30',
+            'TO' => 'required|string|max:30',
+            'HARGA' => 'required|numeric',
+            'TANGGAL' => 'nullable|string|max:1',
+        ]);
+
+        $validated['USEREDIT'] = $request->user()->name ?? 'system';
+
+        $price->update($validated);
+
+        return redirect()->route('price.index')
+            ->with('success', 'Price berhasil diperbarui.');
+    }
+
+    public function destroy(PriceModel $price)
+    {
+        $price->delete();
+
+        return redirect()->route('price.index')
+            ->with('success', 'Price berhasil dihapus.');
+    }
+}

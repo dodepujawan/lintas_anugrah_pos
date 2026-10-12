@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (Schema::hasTable('baph') && ! Schema::hasColumn('baph', 'PAYMENT_COA_ID')) {
+            Schema::table('baph', function (Blueprint $table): void {
+                $table->foreignId('PAYMENT_COA_ID')
+                    ->nullable()
+                    ->after('METODE_PEMBAYARAN')
+                    ->constrained('coas')
+                    ->nullOnDelete();
+            });
+        }
+    }
+
+    public function down(): void
+    {
+        if (Schema::hasTable('baph') && Schema::hasColumn('baph', 'PAYMENT_COA_ID')) {
+            Schema::table('baph', function (Blueprint $table): void {
+                $table->dropConstrainedForeignId('PAYMENT_COA_ID');
+            });
+        }
+    }
+};

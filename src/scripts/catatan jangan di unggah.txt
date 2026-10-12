@@ -1,0 +1,3 @@
+C:\LARAVEL_APP\akuntansi\storage\logs
+C:\LARAVEL_APP\akuntansi\storage\framework
+C:\LARAVEL_APP\akuntansi\bootstrap\cache

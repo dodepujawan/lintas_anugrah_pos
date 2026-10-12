@@ -1,0 +1,190 @@
+===============================================================================
+                         PANDUAN INPUT JURNAL UMUM
+===============================================================================
+
+Jurnal Umum digunakan untuk mencatat transaksi yang tidak dibuat otomatis oleh
+modul Penjualan, Pembelian, Piutang, Hutang, atau Pelunasan.
+
+Syarat utama jurnal:
+  1. Minimal terdiri dari dua baris akun.
+  2. Total Debit harus sama dengan total Kredit.
+
+Sebelum mulai, siapkan bukti transaksi dan tentukan akun yang bertambah atau
+berkurang.
+
+
+-------------------------------------------------------------------------------
+A. PEDOMAN DEBIT DAN KREDIT
+-------------------------------------------------------------------------------
+
+  Kelompok Akun                  Bertambah           Berkurang
+  ---------------------------------------------------------------------------
+  Aset, Kas, Bank, Piutang       Debit               Kredit
+  Beban                          Debit               Kredit
+  Kewajiban atau Hutang          Kredit              Debit
+  Modal atau Ekuitas             Kredit              Debit
+  Pendapatan                     Kredit              Debit
+
+
+-------------------------------------------------------------------------------
+B. LANGKAH INPUT JURNAL UMUM
+-------------------------------------------------------------------------------
+
+1. BUKA FORM JURNAL
+
+   a. Login ke aplikasi.
+   b. Buka menu "Jurnal".
+   c. Klik tombol "Tambah Jurnal".
+
+
+2. ISI INFORMASI JURNAL
+
+   No. Jurnal
+   Nomor dibuat otomatis oleh sistem dan tidak perlu diubah.
+
+   Tanggal
+   Isi sesuai tanggal pada bukti transaksi. Tanggal pada periode yang sudah
+   dikunci tidak dapat digunakan.
+
+   Referensi / Bukti Transaksi
+   Isi nomor kuitansi, faktur, BKK, BKM, atau nomor dokumen lainnya. Kolom ini
+   bersifat opsional dan maksimal 50 karakter.
+
+   Keterangan Umum
+   Isi penjelasan singkat mengenai transaksi.
+
+   Contoh:
+   Pembelian alat tulis kantor secara tunai.
+
+
+3. ISI BARIS JURNAL
+
+   a. Pada kolom "Akun Posting", ketik kode atau nama akun.
+   b. Pilih akun dari daftar yang muncul. Jangan hanya mengetik nama akun.
+   c. Gunakan tombol kaca pembesar jika ingin mencari akun melalui daftar COA.
+   d. Isi "Keterangan Baris" jika diperlukan.
+   e. Masukkan nominal pada salah satu kolom: Debit atau Kredit.
+   f. Jangan mengisi Debit dan Kredit bersamaan pada baris yang sama.
+   g. Klik "Tambah Baris" jika transaksi menggunakan lebih dari dua akun.
+   h. Klik ikon tempat sampah untuk menghapus baris yang tidak diperlukan.
+
+   Catatan:
+   Hanya akun dengan level "Akun Posting" yang dapat digunakan. Akun induk
+   atau akun kelompok tidak dapat dipilih untuk transaksi.
+
+
+4. PERIKSA KESEIMBANGAN JURNAL
+
+   Periksa informasi di bagian bawah form:
+
+     - Total Debit
+     - Total Kredit
+     - Status Saldo
+
+   Jurnal siap diposting jika:
+
+     [ ] Minimal dua baris sudah diisi.
+     [ ] Setiap baris sudah memiliki akun posting.
+     [ ] Setiap baris memiliki nilai Debit atau Kredit.
+     [ ] Debit dan Kredit tidak diisi bersamaan pada satu baris.
+     [ ] Total Debit sama dengan total Kredit.
+
+
+5. SIMPAN DRAFT ATAU POSTING
+
+   Simpan Draft
+   Gunakan jika input belum final atau masih perlu diperiksa. Jurnal berstatus
+   Draft masih dapat diedit atau dihapus.
+
+   Simpan dan Posting Jurnal
+   Gunakan jika seluruh data sudah benar dan total jurnal sudah seimbang.
+   Jurnal yang sudah diposting akan memengaruhi buku besar dan tidak dapat
+   diedit atau dihapus melalui form Jurnal Umum.
+
+   Tips penggunaan keyboard:
+   Saat menekan Enter pada kolom Kredit di baris terakhir, sistem akan
+   memvalidasi baris, menyimpan Draft, dan menyiapkan baris kosong berikutnya.
+
+
+-------------------------------------------------------------------------------
+C. CONTOH TRANSAKSI
+-------------------------------------------------------------------------------
+
+CONTOH 1 - PEMBELIAN ALAT TULIS SECARA TUNAI
+
+Perusahaan membeli alat tulis kantor sebesar 250.000 secara tunai.
+
+  Akun                              Debit                 Kredit
+  ---------------------------------------------------------------------------
+  Beban Alat Tulis Kantor           250.000             0
+  Kas                               0                   250.000
+  ---------------------------------------------------------------------------
+  TOTAL                             250.000             250.000
+
+
+CONTOH 2 - PENERIMAAN PENDAPATAN TUNAI
+
+Perusahaan menerima pendapatan jasa tunai sebesar 1.500.000.
+
+  Akun                              Debit                 Kredit
+  ---------------------------------------------------------------------------
+  Kas                               1.500.000           0
+  Pendapatan Jasa                   0                   1.500.000
+  ---------------------------------------------------------------------------
+  TOTAL                             1.500.000           1.500.000
+
+
+CONTOH 3 - PEMBAYARAN HUTANG USAHA
+
+Perusahaan membayar hutang usaha melalui bank sebesar 2.000.000.
+
+  Akun                              Debit                 Kredit
+  ---------------------------------------------------------------------------
+  Hutang Usaha                      2.000.000           0
+  Bank                              0                   2.000.000
+  ---------------------------------------------------------------------------
+  TOTAL                             2.000.000           2.000.000
+
+
+-------------------------------------------------------------------------------
+D. PENYELESAIAN KENDALA
+-------------------------------------------------------------------------------
+
+1. Pesan: "Akun posting belum dipilih"
+   Solusi: Pilih akun dari daftar saran. Jangan hanya mengetik nama akun.
+
+2. Pesan: "Debit dan Kredit tidak boleh diisi bersamaan"
+   Solusi: Kosongkan atau isi angka 0 pada salah satu sisi baris tersebut.
+
+3. Pesan: "Minimal dua baris jurnal"
+   Solusi: Lengkapi minimal satu baris Debit dan satu baris Kredit.
+
+4. Pesan: "Total Debit dan Kredit harus sama"
+   Solusi: Bandingkan total di bagian bawah form dan perbaiki nominal yang
+   menyebabkan selisih.
+
+5. Pesan bahwa periode telah dikunci
+   Solusi: Gunakan tanggal pada periode yang masih terbuka atau hubungi pihak
+   yang berwenang.
+
+6. Draft gagal disimpan
+   Solusi: Periksa koneksi, pastikan semua baris yang memiliki nominal sudah
+   memiliki akun, kemudian klik "Simpan Draft" kembali.
+
+
+-------------------------------------------------------------------------------
+E. PEMERIKSAAN SEBELUM POSTING
+-------------------------------------------------------------------------------
+
+  [ ] Tanggal sesuai dengan bukti transaksi.
+  [ ] Referensi dan keterangan mudah ditelusuri.
+  [ ] Akun yang dipilih sudah tepat.
+  [ ] Nominal Debit dan Kredit berada pada sisi yang benar.
+  [ ] Total Debit sama dengan total Kredit.
+  [ ] Tidak ada transaksi yang diinput dua kali.
+
+Jika seluruh pemeriksaan sudah terpenuhi, jurnal siap diposting.
+
+===============================================================================
+                              SELESAI
+===============================================================================
