@@ -2,22 +2,22 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="row mb-3">
+<div class="row mb-3" data-debug="transaksiExpedisiHeader">
         <div class="col">
             <h1 class="page-title mb-1">Ekspedisi (EKS)</h1>
             <p class="text-muted small mb-0">Daftar surat jalan ekspedisi</p>
         </div>
-        <div class="col-auto d-flex gap-2">
-            <a href="{{ route('expedisi.print.muat') }}" class="btn btn-outline-secondary btn-sm">
+        <div class="col-auto">
+            <a href="{{ route('expedisi.print.muat') }}" id="btnPrintMuatExpedisi" data-debug="transaksiExpedisiPrintMuat" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-file-pdf"></i> Print Muat
             </a>
-            <a href="{{ route('expedisi.create') }}" class="btn btn-primary btn-sm">
+            <a href="{{ route('expedisi.create') }}" id="btnTambahExpedisi" data-debug="transaksiExpedisiCreateBtn" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg"></i> Tambah SJ
             </a>
         </div>
     </div>
 
-    <form method="GET" class="mb-3">
+    <form method="GET" id="formFilterExpedisi" data-debug="transaksiExpedisiFilter" class="mb-3">
         <div class="row g-2">
             <div class="col-md-4">
                 <input type="text" name="search" class="form-control form-control-sm"

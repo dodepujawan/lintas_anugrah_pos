@@ -2,13 +2,13 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="row mb-3">
+    <div class="row mb-3" data-debug="transaksiKendaraanHeader">
         <div class="col">
-            <h1 class="page-title mb-1">Kendaraan</h1>
+            <h1 class="page-title mb-1">Kendaraam</h1>
             <p class="text-muted small mb-0">Daftar kendaraan operasional</p>
         </div>
         <div class="col-auto">
-            <a href="{{ route('kendaraan.create') }}" class="btn btn-primary btn-sm">
+            <a href="{{ route('kendaraan.create') }}" id="btnTambahKendaraan" data-debug="transaksiKendaraanCreateBtn" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg"></i> Tambah
             </a>
         </div>
@@ -49,7 +49,7 @@
                         <td>{{ $k->FNO_PRK_T }}</td>
                         <td>{{ $k->JENIS }}</td>
                         <td class="text-end">
-                            <a href="{{ route('kendaraan.edit', $k) }}" class="btn btn-sm btn-outline-warning">
+                            <a href="{{ route('kendaraan.edit', $k) }}" id="btnEditKendaraan-{{ $k->id }}" data-debug="transaksiKendaraanEdit" class="btn btn-sm btn-outline-warning">
                                 <i class="bi bi-pencil"></i> Edit
                             </a>
                         </td>

@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container-fluid">
-    <form id="expedisiForm" method="POST" action="{{ route('expedisi.store') }}">
+    <form id="formExpedisiCreate" data-debug="transaksiExpedisiCreate" method="POST" action="{{ route('expedisi.store') }}">
         @csrf
         <div class="row mb-3">
             <div class="col">
@@ -10,10 +10,10 @@
                 <p class="text-muted small mb-0">Input Surat Jalan (SJ)</p>
             </div>
             <div class="col-auto">
-                <button type="submit" class="btn btn-success btn-sm">
+                <button type="submit" id="btnSimpanExpedisi" data-debug="transaksiExpedisiStore" class="btn btn-success btn-sm">
                     <i class="bi bi-save"></i> Simpan
                 </button>
-                <a href="{{ route('expedisi.index') }}" class="btn btn-outline-secondary btn-sm">
+                <a href="{{ route('expedisi.index') }}" id="btnBatalExpedisi" data-debug="transaksiExpedisiCancel" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-x-lg"></i> Batal
                 </a>
             </div>
@@ -46,11 +46,11 @@
 
                             <div class="col-md-2">
                                 <label class="form-label">No SJ</label>
-                                <input type="text" name="NOSJ" class="form-control form-control-sm" readonly>
+                                <input type="text" name="NOSJ" data-debug="transaksiExpedisi_NOSJ" class="form-control form-control-sm" readonly>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Tgl Muat <span class="text-danger">*</span></label>
-                                <input type="date" name="TGLMUAT" class="form-control form-control-sm" required>
+                                <input type="date" name="TGLMUAT" data-debug="transaksiExpedisi_TGLMUAT" class="form-control form-control-sm" required>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Tgl PO</label>
@@ -71,7 +71,7 @@
 
                             <div class="col-md-4">
                                 <label class="form-label">Kode Customer <span class="text-danger">*</span></label>
-                                <select name="CUSTOMER_KODE" class="form-select form-select-sm select2-customer" required>
+                                <select name="CUSTOMER_KODE" id="selectCustomer" data-debug="transaksiExpedisi_CUSTOMER_KODE" class="form-select form-select-sm select2-customer" required>
                                     <option value="">Pilih Customer</option>
                                     @foreach($customers as $c)
                                     <option value="{{ $c->CUSTOMER }}">{{ $c->CUSTOMER }} - {{ $c->NAMACUST ?? '' }}</option>
@@ -85,7 +85,7 @@
 
                             <div class="col-md-3">
                                 <label class="form-label">Kendaraan</label>
-                                <select name="KENDARAAN" class="form-select form-select-sm select2-kendaraan">
+                                <select name="KENDARAAN" id="selectKendaraan" data-debug="transaksiExpedisi_KENDARAAN" class="form-select form-select-sm select2-kendaraan">
                                     <option value="">Pilih Kendaraan</option>
                                     @foreach($kendaraans as $k)
                                     <option value="{{ $k->KODE }}">{{ $k->KODE }} - {{ $k->NAMA }}</option>
@@ -94,7 +94,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Driver 1</label>
-                                <select name="DRIVER" class="form-select form-select-sm select2-driver">
+                                <select name="DRIVER" id="selectDriver1" data-debug="transaksiExpedisi_DRIVER" class="form-select form-select-sm select2-driver">
                                     <option value="">Pilih Driver</option>
                                     @foreach($drivers as $d)
                                     <option value="{{ $d->NAMA ?? $d->name }}">{{ $d->getDisplayName() }}</option>
@@ -122,7 +122,7 @@
 
                             <div class="col-md-2">
                                 <label class="form-label">Jumlah (KM)</label>
-                                <input type="number" step="0.001" name="JUMLAH" class="form-control form-control-sm">
+                                <input type="number" step="0.001" name="JUMLAH" data-debug="transaksiExpedisi_JUMLAH" class="form-control form-control-sm">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Satuan</label>
