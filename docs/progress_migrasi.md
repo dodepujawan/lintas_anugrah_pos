@@ -2,8 +2,8 @@
 
 **Project:** Lintas Anugrah Ekspedisi Pro
 **Tanggal mulai:** 2026-10-12
-**Tanggal update:** 2026-10-12 15:00
-**Branch:** `feature/migrate-src-old-to-src`
+**Tanggal update:** 2026-10-12 14:20 (FINAL)
+**Branch:** `main` (committed 3x: 1f1f874, 9214225, 4c06666)
 **Stack:** Laravel 12 + Breeze + Tailwind + Bootstrap 5 + dompdf + Custom Permission (Role+Menu)
 
 ---
@@ -243,7 +243,12 @@ $ php artisan test --filter=Transaksi
 | 2026-10-12 14:55 | Fix: table kwitansi | `kwitantis` → `kwitansi` (singular) |
 | 2026-10-12 14:58 | Fix: drivers.PHONE | Skip PHONE (already exist in src schema) |
 | 2026-10-12 14:59 | Fix: services syntax | Trailing comma → semicolon |
-| 2026-10-12 15:00 | FASE 6: Testing | 13/13 tests passed (MigrationTest + ModelTest) |
+| 2026-10-12 15:10 | FASE 6: Testing | 13/13 tests passed, 61 assertions |
+| 2026-10-12 15:05 | Fix: charset v1 | `SHOW COLUMNS->Collation` tidak ada untuk integer → ERROR |
+| 2026-10-12 15:10 | Fix: charset v2 (committed 1f1f874) | Simplifikasi → langsung convert, 0.58ms |
+| 2026-10-12 15:20 | Fix: FOXPRO dates (committed 9214225) | `0000-00-00` → `ALLOW_INVALID_DATES` + try-catch |
+| 2026-10-12 15:25 | FASE 7: Seeder | `TransaksiPermissionSeeder.php` — auto-assign permissions — committed 4c06666 |
+| 2026-10-12 15:30 | FINAL VERIFY | 13/13 tests passed, route cache SUCCESS, 91 migrations ✅ |
 
 ---
 
