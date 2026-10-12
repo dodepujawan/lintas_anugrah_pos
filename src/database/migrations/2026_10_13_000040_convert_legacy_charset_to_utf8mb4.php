@@ -12,7 +12,7 @@ return new class extends Migration
         'rutes', 'expedisis', 'coolrooms', 'kwitansi',
         'services', 'rekenings', 'signatures', 'areas',
         'ol_pajaks', 'arh', 'aph', 'barh', 'bard', 'baph', 'bapd',
-        'msupplier', 'mcustomer', 'drivers', 'kwitansi',
+        'msupplier', 'mcustomer', 'drivers',
     ];
 
     public function up(): void
@@ -26,24 +26,9 @@ return new class extends Migration
                 continue;
             }
 
-            $columns = DB::select("SHOW COLUMNS FROM `{$table}`");
-
-            foreach ($columns as $column) {
-                $field = $column->Field;
-                $type = $column->Type;
-                $collation = $column->Collation;
-
-                // Skip kolom yang sudah utf8mb4
-                if (is_null($collation)) {
-                    continue;
-                }
-
-                // Konversi kolom teks ke utf8mb4
-                if (in_array($column->Type, ['char', 'varchar', 'text', 'mediumtext', 'longtext'])) {
-                    DB::statement("ALTER TABLE `{$table}` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                    break; // break inner loop, sudah convert satu kolom artinya seluruh tabel sudah convert
-                }
-            }
+            DB::statement(
+                "ALTER TABLE `{$table}` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            );
         }
     }
 
@@ -58,7 +43,9 @@ return new class extends Migration
                 continue;
             }
 
-            DB::statement("ALTER TABLE `{$table}` CONVERT TO CHARACTER SET latin1 COLLATE latin1_general_ci");
+            DB::statement(
+                "ALTER TABLE `{$table}` CONVERT TO CHARACTER SET latin1 COLLATE latin1_general_ci"
+            );
         }
     }
 };
