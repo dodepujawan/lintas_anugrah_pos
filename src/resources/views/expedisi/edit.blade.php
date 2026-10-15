@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
-    <form id="expedisiForm" method="POST" action="{{ route('expedisi.update', $expedisi) }}">
+<div class="container-fluid" data-debug="transaksiExpedisiEdit">
+    <form id="formExpedisiEdit" data-debug="transaksiExpedisiEditForm" method="POST" action="{{ route('expedisi.update', $expedisi) }}">
         @csrf @method('PUT')
         <div class="row mb-3">
             <div class="col">
@@ -10,10 +10,10 @@
                 <p class="text-muted small mb-0">NOSJ: {{ $expedisi->NOSJ }}</p>
             </div>
             <div class="col-auto">
-                <button type="submit" class="btn btn-success btn-sm">
+                <button type="submit" id="btnSimpanExpedisiEdit" data-debug="transaksiExpedisiEditSave" class="btn btn-success btn-sm">
                     <i class="bi bi-save"></i> Simpan
                 </button>
-                <a href="{{ route('expedisi.index') }}" class="btn btn-outline-secondary btn-sm">
+                <a href="{{ route('expedisi.index') }}" id="btnBatalExpedisiEdit" data-debug="transaksiExpedisiEditCancel" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-x-lg"></i> Batal
                 </a>
             </div>

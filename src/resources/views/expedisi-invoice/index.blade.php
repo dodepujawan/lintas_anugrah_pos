@@ -1,25 +1,25 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid" data-debug="transaksiExpedisiInvoiceList">
     <div class="row mb-3">
         <div class="col">
             <h1 class="page-title mb-1">Invoice Expedisi</h1>
             <p class="text-muted small mb-0">Daftar invoice yang sudah digenerate</p>
         </div>
         <div class="col-auto">
-            <a href="{{ route('expedisi-invoice-gen.index') }}" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ route('expedisi-invoice-gen.index') }}" id="btnEditInvoiceExpedisi" data-debug="transaksiExpedisiInvoiceEditBtn" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-pencil-square"></i> Edit Invoice
             </a>
         </div>
     </div>
 
-    <form method="GET" class="mb-3">
+    <form method="GET" id="formFilterInvoiceExpedisi" data-debug="transaksiExpedisiInvoiceFilter" class="mb-3">
         <div class="input-group input-group-sm">
             <input type="text" name="search" class="form-control"
                    placeholder="Cari No. Invoice / Customer..." value="{{ request('search') }}">
             <button class="btn btn-primary" type="submit">Cari</button>
-            <a href="{{ route('expedisi-invoice.index') }}" class="btn btn-outline-secondary">Reset</a>
+            <a href="{{ route('expedisi-invoice-gen.index') }}" class="btn btn-outline-secondary">Reset</a>
         </div>
     </form>
 
@@ -51,10 +51,10 @@
                         <td class="text-end">{{ number_format((float) $inv->BAYAR, 0, ',', '.') }}</td>
                         <td class="text-end">{{ number_format((float) $inv->SALDO, 0, ',', '.') }}</td>
                         <td class="text-end">
-                            <a href="{{ route('expedisi-invoice.show', $inv->NOFAKTUR) }}" class="btn btn-sm btn-outline-primary" title="Detail">
+                            <a href="{{ route('expedisi-invoice.show', $inv->NOFAKTUR) }}" id="btnDetailInvoice_{{ $inv->NOFAKTUR }}" data-debug="transaksiExpedisiInvoiceDetail_{{ $inv->NOFAKTUR }}" class="btn btn-sm btn-outline-primary" title="Detail">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{{ route('expedisi-invoice.pdfGabungInvoice', $inv->NOFAKTUR) }}" class="btn btn-sm btn-outline-secondary" title="Print" target="_blank">
+                            <a href="{{ route('expedisi-invoice.pdfGabungInvoice', $inv->NOFAKTUR) }}" id="btnPrintInvoice_{{ $inv->NOFAKTUR }}" data-debug="transaksiExpedisiInvoicePrint_{{ $inv->NOFAKTUR }}" class="btn btn-sm btn-outline-secondary" title="Print" target="_blank">
                                 <i class="bi bi-printer"></i>
                             </a>
                         </td>

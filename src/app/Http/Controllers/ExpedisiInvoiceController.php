@@ -7,6 +7,7 @@ use App\Models\Expedisi;
 use App\Models\Arh;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class ExpedisiInvoiceController extends Controller
 {
@@ -62,6 +63,14 @@ class ExpedisiInvoiceController extends Controller
         return response()->json($invoices);
     }
 
+    public function show($noInvoice)
+    {
+        $invoice = Arh::where('NOFAKTUR', $noInvoice)->firstOrFail();
+        $details = Expedisi::where('INVOICE', $noInvoice)->where('JENIS', 'EKS')->get();
+
+        return view('expedisi-invoice.show', compact('invoice', 'details'));
+    }
+
     public function storeGabungInvoice(Request $request)
     {
         $validated = $request->validate([
@@ -99,7 +108,7 @@ class ExpedisiInvoiceController extends Controller
             $expedisis->each(fn($e) => $e->update(['INVOICE' => $validated['NOFAKTUR']]));
         });
 
-        return redirect()->route('expedisi-invoice-gabung.index')
+        return redirect()->route('expedisi-invoice.index')
             ->with('success', 'Gabung invoice berhasil.');
     }
 
@@ -114,7 +123,7 @@ class ExpedisiInvoiceController extends Controller
             'KETERANGAN' => $request->input('KETERANGAN'),
         ]);
 
-        return redirect()->route('expedisi-invoice-gabung.index')
+        return redirect()->route('expedisi-invoice.index')
             ->with('success', 'Invoice berhasil diperbarui.');
     }
 }

@@ -1,18 +1,27 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid" data-debug="transaksiExpedisiKwitansiIndex">
     <div class="row mb-3">
         <div class="col">
             <h1 class="page-title mb-1">Kwitansi Expedisi</h1>
             <p class="text-muted small mb-0">Daftar kwitansi pembayaran</p>
         </div>
         <div class="col-auto">
-            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#prosesKwitansiModal">
+            <button type="button" id="btnProsesKwitansiExpedisi" data-debug="transaksiExpedisiKwitansiProsesBtn" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#prosesKwitansiModal">
                 <i class="bi bi-plus-lg"></i> Proses Kwitansi
             </button>
         </div>
     </div>
+
+    <form method="GET" id="formFilterKwitansiExpedisi" data-debug="transaksiExpedisiKwitansiFilter" class="mb-3">
+        <div class="input-group input-group-sm">
+            <input type="text" name="search" class="form-control"
+                   placeholder="Cari No. KWT / Invoice..." value="{{ request('search') }}">
+            <button class="btn btn-primary" type="submit">Cari</button>
+            <a href="{{ route('expedisi-kwitansi.index') }}" class="btn btn-outline-secondary">Reset</a>
+        </div>
+    </form>
 
     <div class="card">
         <div class="table-responsive">
@@ -40,11 +49,18 @@
                         <td>{{ $k->CUSTOMER }}</td>
                         <td class="text-end">{{ number_format((float) $k->SALDO_FAKTUR, 0, ',', '.') }}</td>
                         <td class="text-end">{{ number_format((float) $k->NILAI_BAYAR, 0, ',', '.') }}</td>
-                        <td class="text-end">{{ number_format((float) ($k->SALDO_FAKTUR - $k->BAYAR), 0, ',', '.') }}</td>
+                        <td class="text-end">{{ number_format((float) ($k->SISA_FAKTUR ?? ($k->SALDO_FAKTUR - $k->NILAI_BAYAR)), 0, ',', '.') }}</td>
                         <td class="text-end">
-                            <a href="{{ route('expedisi-kwitansi.printKwitansi', $k) }}" class="btn btn-sm btn-outline-primary" title="Print">
+                            <a href="{{ route('expedisi-kwitansi.printKwitansi', $k) }}" id="btnPrintKwitansi_{{ $k->NO_KWT }}" data-debug="transaksiExpedisiKwitansiPrint_{{ $k->NO_KWT }}" class="btn btn-sm btn-outline-primary" title="Print" target="_blank">
                                 <i class="bi bi-printer"></i>
                             </a>
+                            <form action="{{ route('expedisi-kwitansi.destroy', $k) }}" method="POST"
+                                  onsubmit="return confirm('Hapus kwitansi ini?')" data-debug="transaksiExpedisiKwitansiDelete_{{ $k->NO_KWT }}">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     @empty

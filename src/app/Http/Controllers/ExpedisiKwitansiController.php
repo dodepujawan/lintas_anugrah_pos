@@ -107,8 +107,10 @@ class ExpedisiKwitansiController extends Controller
     public function printKwitansi(Kwitansi $kwitansi)
     {
         $arh = Arh::where('NOFAKTUR', $kwitansi->NOFAKTUR)->first();
+        $signature = \App\Models\Signature::where('is_active', true)->first();
+        $rekening = \App\Models\Rekening::where('AKTIF', true)->first();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('expedisi-kwitansi.pdf.index', compact('kwitansi', 'arh'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('expedisi-kwitansi.pdf.index', compact('kwitansi', 'arh', 'signature', 'rekening'));
 
         return $pdf->stream('kwitansi-' . $kwitansi->NO_KWT . '.pdf', ['stream' => true]);
     }

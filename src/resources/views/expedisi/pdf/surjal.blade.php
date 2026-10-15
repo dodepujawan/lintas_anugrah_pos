@@ -3,74 +3,146 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: sans-serif; font-size: 10px; }
-        .header { text-align: center; margin-bottom: 10px; }
-        .header h2 { font-size: 14px; margin: 0; }
-        .header h3 { font-size: 11px; margin: 2px 0; }
-        .kwt { text-align: center; margin-top: 20px; margin-bottom: 10px; }
-        .kwt h3 { font-size: 14px; font-weight: bold; }
-        .content { page-break-after: always; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        td, th { border: 1px solid #000; padding: 3px 5px; }
+        body { font-family: sans-serif; font-size: 11px; }
+        .header { margin-bottom: 10px; }
+        .company { font-weight: bold; font-size: 13px; }
+        .sub-title { font-size: 10px; color: #555; }
+        .table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        td, th { border: 1px solid #000; padding: 4px 6px; }
         .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .no-border { border: none !important; }
+        .sign-row td { border: none !important; }
+        .sign-col { width: 25%; vertical-align: top; }
     </style>
 </head>
 <body>
-<div class="content">
     <div class="header">
-        <h2>{{ config('app.name', 'FinLedger') }}</h2>
+        <table class="no-border">
+            <tr>
+                <td class="no-border">
+                    <div class="company">PT. LINTAS MITRA ANUGERAH SEJATI</div>
+                    <div class="sub-title">COLD CHAIN DISTRIBUTION &amp; STORAGE</div>
+                    <div class="sub-title">Denpasar - Bali</div>
+                </td>
+                <td class="no-border text-right">
+                    <strong>SURAT JALAN EKSPEDISI</strong><br>
+                    NO SJ: <span class="font-monospace">{{ $expedisi->NOSJ ?? '-' }}</span>
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <div class="kwt">
-        <h3>BUKTI KAS &mdash; {{ $expedisi->JENIS_KWT ?? 'EKS' }}</h3>
-    </div>
-
     <table>
         <tr>
-            <th style="width:15%">No. KWT</th>
-            <td>{{ $kwitansi->NO_KWT }}</td>
-            <th style="width:15%">Tgl KWT</th>
-            <td>{{ $kwitansi->TGL_KWT?->format('d/m/Y') }}</td>
+            <td style="width:15%">Tanggal SJ</td>
+            <td style="width:35%">{{ $expedisi->tglsj?->format('d/m/Y') ?? $expedisi->TGLMUAT?->format('d/m/Y') ?? '-' }}</td>
+            <td style="width:15%">Nama Customer</td>
+            <td style="width:35%">{{ $expedisi->CUSTOMER ?? '-' }}</td>
         </tr>
         <tr>
-            <th>Invoice</th>
-            <td>{{ $kwitansi->NOFAKTUR }}</td>
-            <th>Sales</th>
-            <td>{{ $arh->SALES ?? $arh->CUSTOMER ?? '-' }}</td>
+            <td>Nama Penerima</td>
+            <td>{{ $expedisi->P_NAMA ?? '-' }}</td>
+            <td>No Telp</td>
+            <td>{{ $expedisi->P_PHONE ?? '-' }}</td>
+        </tr>
+        <tr>
+            <td>Alamat</td>
+            <td colspan="3">{{ $expedisi->P_ALAMAT ?? '-' }}</td>
         </tr>
     </table>
 
     <table>
-        <tr class="table-light">
-            <th style="width:15%">Saldo Faktur</th>
-            <th style="width:15%">Bayar</th>
-            <th style="width:15%">Discount</th>
-            <th style="width:15%">Retur</th>
-            <th style="width:15%">Sisa</th>
-            <th style="width:25%">Keterangan</th>
-        </tr>
-        <tr>
-            <td class="text-right">{{ number_format($kwitansi->SALDO_FAKTUR, 0, ',', '.') }}</td>
-            <td class="text-right">{{ number_format($kwitansi->NILAI_BAYAR, 0, ',', '.') }}</td>
-            <td class="text-right">{{ number_format($kwitansi->DISCOUNT, 0, ',', '.') }}</td>
-            <td class="text-right">{{ number_format($kwitansi->RETUR, 0, ',', '.') }}</td>
-            <td class="text-right">{{ number_format($kwitansi->SALDO_FAKTUR - $kwitansi->BAYAR, 0, ',', '.') }}</td>
-            <td>{{ $kwitansi->KETERANGAN }}</td>
-        </tr>
+        <thead>
+            <tr>
+                <th style="width:5%">No</th>
+                <th style="width:25%">Item Barang</th>
+                <th style="width:15%">Penyimpanan</th>
+                <th style="width:10%">Suhu</th>
+                <th style="width:10%">Koli</th>
+                <th style="width:15%">Kg / Ton</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">1</td>
+                <td>{{ $expedisi->barang ?? '-' }}</td>
+                <td class="text-center">{{ strtoupper($expedisi->penyimpanan ?? '-') }}</td>
+                <td class="text-center">{{ $expedisi->SUHU ?? '-' }}</td>
+                <td class="text-center">{{ $expedisi->KOLI ?? '0' }}</td>
+                <td class="text-center">{{ number_format((float) ($expedisi->JUMLAH ?? 0), 0, ',', '.') }}</td>
+            </tr>
+            @for ($i = 2; $i <= 6; $i++)
+            <tr>
+                <td class="text-center">{{ $i }}</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            @endfor
+        </tbody>
     </table>
 
     <table>
         <tr>
-            <td style="width:50%">
-                <strong>Customer:</strong> {{ $kwitansi->CUSTOMER }}<br>
-                <strong>Nama:</strong> {{ $kwitansi->NAMACUST ?? '-' }}
+            <td style="width:70%; vertical-align: top;">
+                <strong>Catatan Khusus:</strong><br>
+                {{ $expedisi->catatan ?? '-' }}
             </td>
-            <td style="width:50%; text-align:right;">
-                <strong>USER:</strong> {{ $kwitansi->USEREDIT ?? $kwitansi->user ?? '-' }}<br>
-                <strong>TTD:</strong> {{ $signature->NAMA ?? '_________________' }}
+            <td class="text-right">Subtotal</td>
+            <td class="text-right" style="width:15%">Rp. {{ number_format((float) ($expedisi->TOTAL ?? 0), 0, ',', '.') }}</td>
+        </tr>
+        <tr>
+            <td class="text-right">PPN</td>
+            <td class="text-right">Rp. {{ number_format((float) ($expedisi->PPN ?? 0), 0, ',', '.') }}</td>
+        </tr>
+        <tr>
+            <td class="text-right"><strong>Grand Total</strong></td>
+            <td class="text-right"><strong>Rp. {{ number_format((float) ($expedisi->GRAND ?? 0), 0, ',', '.') }}</strong></td>
+        </tr>
+    </table>
+
+    <table>
+        <tr class="sign-row">
+            <td class="sign-col">
+                <table class="table">
+                    <tr><td class="text-center"><strong>DISTRIBUSI</strong></td></tr>
+                    <tr><td><strong>NAMA SOPIR</strong></td><td>{{ $expedisi->NAMA_DRIVER ?? '-' }}</td></tr>
+                    <tr><td><strong>NO. PELAT</strong></td><td>{{ $expedisi->PLAT ?? '-' }}</td></tr>
+                    <tr><td colspan="2" style="height:70px; vertical-align:bottom;">
+                        <div style="border-top:1px solid #000; text-align:center; margin-top:40px;">
+                            (.................................)
+                        </div>
+                    </td></tr>
+                </table>
+            </td>
+            <td class="sign-col">
+                <table class="table">
+                    <tr><td class="text-center"><strong>CUSTOMER</strong></td></tr>
+                    <tr><td><strong>NAMA</strong></td><td>{{ $expedisi->CUSTOMER ?? '-' }}</td></tr>
+                    <tr><td colspan="2" style="height:60px;">&nbsp;</td></tr>
+                    <tr><td colspan="2" style="height:70px; vertical-align:bottom;">
+                        <div style="border-top:1px solid #000; text-align:center; margin-top:25px;">
+                            (.................................)
+                        </div>
+                    </td></tr>
+                </table>
+            </td>
+            <td class="sign-col">
+                <table class="table">
+                    <tr><td class="text-center"><strong>PENERIMA</strong></td></tr>
+                    <tr><td><strong>NAMA</strong></td><td>{{ $expedisi->P_NAMA ?? '-' }}</td></tr>
+                    <tr><td colspan="2" style="height:60px;">&nbsp;</td></tr>
+                    <tr><td colspan="2" style="height:70px; vertical-align:bottom;">
+                        <div style="border-top:1px solid #000; text-align:center; margin-top:25px;">
+                            (.................................)
+                        </div>
+                    </td></tr>
+                </table>
             </td>
         </tr>
     </table>
-</div>
 </body>
 </html>

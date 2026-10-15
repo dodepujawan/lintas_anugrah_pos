@@ -15,10 +15,10 @@ FASE 1: Migration Foundation          [██████████] 100% ✅ 
 FASE 2: Models                        [██████████] 100% ✅ Selesai (17 file)
 FASE 3: Controllers                   [██████████] 100% ✅ Selesai (21 file)
 FASE 4: Routes + Menu registration    [██████████] 100% ✅ Selesai (141 routes, 28 menu)
-FASE 5: Views                         [██████░░░░░░]  55% (16/25 dirs + 1/9 PDF) — IN PROGRESS
+FASE 5: Views                         [███████░░░░░]  70% (16/25 dirs + 4/9 PDF) — IN PROGRESS
 FASE 6: Testing                       [██████████] 100% ✅ 13/13 tests passed (61 assertions)
 ────────────────────────────────────────────────────────────
-TOTAL                              [████████░░░░░░]  80%
+TOTAL                              [███████░░░░░░]  84%
 ```
 
 ---
@@ -174,26 +174,35 @@ $ php artisan migrate --force
 - `expedisi/index.blade.php` — list + filter + pagination
 - `expedisi/create.blade.php` — form SJ + AJAX customer lookup
 - `expedisi/show.blade.php` — detail view
-- `expedisi/pdf/surjal.blade.php` — PDF template ⭐
+- `expedisi/edit.blade.php` — edit form (+debug attrs)
+- `expedisi/pdf/surjal.blade.php` — PDF template ⭐ (rewritten: proper SJ, not kwitansi)
+- `expedisi/pdf/muat.blade.php` — PDF template ⭐ (+baru)
 - `kendaraan/index.blade.php` + `create.blade.php` + `edit.blade.php`
 - `coolroom/index.blade.php`
 - `rent-pendingin/index.blade.php`
 - `service/index.blade.php` + `create.blade.php`
-- `expedisi-invoice/index.blade.php`
-- `expedisi-kwitansi/index.blade.php` — form + kwitansi table + proses modal
+- `expedisi-invoice/index.blade.php` (+debug attrs, fixed route refs)
+- `expedisi-invoice-gabung/index.blade.php` — gabung SJ form ⭐ (+baru)
+- `expedisi-invoice/show.blade.php` ⭐ (+baru)
+- `expedisi-invoice/edit.blade.php` ⭐ (+baru)
+- `expedisi-invoice/show-edit.blade.php` ⭐ (+baru)
+- `expedisi-invoice/print/text.blade.php` ⭐ (+baru)
+- `expedisi-invoice/pdf/index.blade.php` — PDF template ⭐ (+baru)
+- `expedisi-kwitansi/index.blade.php` (+debug attrs, fixed Sisa calc)
+- `expedisi-kwitansi/pdf/index.blade.php` — PDF template ⭐ (+baru)
 - `kwitansi-history/index.blade.php` — all kwitansi + export
 - `rekening/index.blade.php`
 - `price/index.blade.php` + `price-customer/index` + `price-rent/index` + `price-rent-customer/index`
 
-### 5.2 TODO (9 dirs + 8 PDF) — Next priority
-- `expedisi/edit.blade.php`
-- `coolroom/create.blade.php` + `edit.blade.php`
-- `coolroom-invoice/` (index, show, edit)
-- `coolroom-kwitansi/index.blade.php`
+### 5.2 TODO (remaining) — Step by step
 - `rent-pendingin/create.blade.php`
-- `rent-pendingin-invoice/` (index, show, edit)
-- `rent-pendingin-kwitansi/index.blade.php`
-- PDF templates: muat, invoice, kwitansi ×3, coolroom ×2, rent ×2
+- `rent-pendingin/pdf/surjal.blade.php` — PDF template
+- `rent-pendingin-invoice/` (index, edit, show-edit, pdf)
+- `rent-pendingin-kwitansi/index.blade.php` + pdf
+- `coolroom/create.blade.php` + `edit.blade.php`
+- `coolroom/pdf/index.blade.php` — PDF template
+- `coolroom-invoice/` (show, edit, pdf)
+- `coolroom-kwitansi/index.blade.php` + pdf
 
 ---
 
@@ -249,13 +258,16 @@ $ php artisan test --filter=Transaksi
 | 2026-10-12 15:20 | Fix: FOXPRO dates (committed 9214225) | `0000-00-00` → `ALLOW_INVALID_DATES` + try-catch |
 | 2026-10-12 15:25 | FASE 7: Seeder | `TransaksiPermissionSeeder.php` — auto-assign permissions — committed 4c06666 |
 | 2026-10-12 15:30 | FINAL VERIFY | 13/13 tests passed, route cache SUCCESS, 91 migrations ✅ |
+| 2026-10-15 00:15 | FASE 5 Step 1: Expedisi (EKS) | Fix view not found di expedisi-invoice + expedisi-kwitansi | Added 6 views, 3 PDF templates, 5 routes | Fixed surjal PDF (was kwitansi template with wrong vars) | Fixed kwitansi index Sisa calc (`$k->BAYAR`→`$k->SISA_FAKTUR`) | Added `show()` method to ExpedisiInvoiceController | Added `$signature`+`$rekening` to PDF methods | Debug attrs added to all views |
+| 2026-10-15 00:20 | Tests re-verify | 13/13 passed, route cache SUCCESS |
 
 ---
 
 ## 🎯 RENCANA TAILUHE
 
-### Langkah Selanjutnya (2-3 hari)
-1. **Sisa Views** (14 directory + 8 PDF templates) — gunakan pattern yang sudah ada (expedisi/create)
-2. **Controller endpoint test** — buat test untuk verifikasi route dapat diakses (guest redirect, auth flow)
-3. **Data migration script** — script konversi data lama (latin1, FoxBASE/FOXPRO) ke tabel baru
-4. **Integration test** — transaksi → jurnal → arh/barh → ledger sync
+### Langkah Selanjutnya (step by step, awaiting review)
+1. **Rent Pendingin (REN)** — 3 view dirs + 3 PDF templates
+2. **Coolroom** — 3 view dirs + 3 PDF templates  
+3. **Controller endpoint test** — buat test untuk verifikasi route dapat diakses
+4. **Data migration script** — script konversi data lama ke tabel baru
+5. **Integration test** — transaksi → jurnal → arh/barh → ledger sync

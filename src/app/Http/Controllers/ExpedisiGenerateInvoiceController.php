@@ -150,8 +150,10 @@ class ExpedisiGenerateInvoiceController extends Controller
     {
         $arh = Arh::where('NOFAKTUR', $noInvoice)->firstOrFail();
         $details = Expedisi::where('INVOICE', $noInvoice)->get();
+        $signature = \App\Models\Signature::where('is_active', true)->first();
+        $rekening = \App\Models\Rekening::where('AKTIF', true)->first();
 
-        return response()->view('expedisi-invoice.print.text', compact('arh', 'details'))
+        return response()->view('expedisi-invoice.print.text', compact('arh', 'details', 'signature', 'rekening'))
             ->header('Content-Type', 'text/plain');
     }
 
@@ -159,8 +161,10 @@ class ExpedisiGenerateInvoiceController extends Controller
     {
         $arh = Arh::where('NOFAKTUR', $noInvoice)->firstOrFail();
         $details = Expedisi::where('INVOICE', $noInvoice)->get();
+        $signature = \App\Models\Signature::where('is_active', true)->first();
+        $rekening = \App\Models\Rekening::where('AKTIF', true)->first();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('expedisi-invoice.pdf.index', compact('arh', 'details'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('expedisi-invoice.pdf.index', compact('arh', 'details', 'signature', 'rekening'));
 
         return $pdf->stream('invoice-' . $noInvoice . '.pdf', ['stream' => true]);
     }

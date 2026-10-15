@@ -576,18 +576,26 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
         ->name('expedisi-invoice.edit');
     Route::put('expedisi-invoice/{noInvoice}', [ExpedisiInvoiceController::class, 'updateGabungInvoice'])
         ->name('expedisi-invoice.update');
+    Route::get('expedisi-invoice/{noInvoice}', [ExpedisiInvoiceController::class, 'show'])
+        ->name('expedisi-invoice.show');
+    Route::get('expedisi-invoice/{noInvoice}/pdf', [ExpedisiGenerateInvoiceController::class, 'pdfGabungInvoice'])
+        ->name('expedisi-invoice.pdfGabungInvoice');
+    Route::get('expedisi-invoice/data/muat', [ExpedisiInvoiceController::class, 'getDataMuat'])
+        ->name('expedisi-invoice.data.muat');
+    Route::get('expedisi-invoice/data/gabung', [ExpedisiInvoiceController::class, 'dataGabung'])
+        ->name('expedisi-invoice.data.gabung');
+    Route::get('expedisi-invoice/data/existing', [ExpedisiInvoiceController::class, 'getExistingGabung'])
+        ->name('expedisi-invoice.data.existing');
 
     /*
+    |--------------------------------------------------------------------------
     | Expedisi Generate Invoice (Generate Invoice + AR + Excel)
     |   sidebar_Invoice_gen_expedisi → expedisi-generate-invoice.index
     */
-    Route::resource('expedisi-generate-invoice', ExpedisiGenerateInvoiceController::class);
-    Route::get('expedisi-invoice-gen', [ExpedisiGenerateInvoiceController::class, 'indexEdit'])
-        ->name('expedisi-invoice-gen.index');
-    Route::get('expedisi-invoice-gen/{noInvoice}/edit', [ExpedisiGenerateInvoiceController::class, 'showEditInvoice'])
-        ->name('expedisi-invoice-gen.edit');
-    Route::put('expedisi-invoice-gen/{noInvoice}', [ExpedisiGenerateInvoiceController::class, 'updateEditInvoice'])
-        ->name('expedisi-invoice-gen.update');
+    Route::resource('expedisi-generate-invoice', ExpedisiGenerateInvoiceController::class)->except(['store']);
+    Route::post('expedisi-generate-invoice', [ExpedisiGenerateInvoiceController::class, 'prosesInvoiceStore'])->name('expedisi-generate-invoice.store');
+    Route::get('expedisi-generate-invoice/data', [ExpedisiGenerateInvoiceController::class, 'getDataInvoiceGen'])->name('expedisi-generate-invoice.data');
+    Route::get('expedisi-generate-invoice/export', [ExpedisiGenerateInvoiceController::class, 'export'])->name('expedisi-generate-invoice.export');
 
     /*
     | Expedisi Kwitansi (Pembayaran)
@@ -601,6 +609,15 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
         ->name('expedisi-kwitansi.proses');
     Route::delete('expedisi-kwitansi/{kwitansi}', [ExpedisiKwitansiController::class, 'deleteKwitansi'])
         ->name('expedisi-kwitansi.destroy');
+    Route::get('expedisi-kwitansi/{kwitansi}/print', [ExpedisiKwitansiController::class, 'printKwitansi'])
+        ->name('expedisi-kwitansi.printKwitansi');
+
+    Route::get('expedisi-invoice-gen', [ExpedisiGenerateInvoiceController::class, 'indexEdit'])
+        ->name('expedisi-invoice-gen.index');
+    Route::get('expedisi-invoice-gen/{noInvoice}/edit', [ExpedisiGenerateInvoiceController::class, 'showEditInvoice'])
+        ->name('expedisi-invoice-gen.edit');
+    Route::put('expedisi-invoice-gen/{noInvoice}', [ExpedisiGenerateInvoiceController::class, 'updateEditInvoice'])
+        ->name('expedisi-invoice-gen.update');
 
     /*
     | Rent Pendingin (REN)
