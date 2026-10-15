@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid" data-debug="transaksiKendaraanIndex">
     <div class="row mb-3" data-debug="transaksiKendaraanHeader">
         <div class="col">
             <h1 class="page-title mb-1">Kendaraam</h1>
@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <form method="GET" class="mb-3">
+    <form method="GET" id="formFilterKendaraan" data-debug="transaksiKendaraanFilter" class="mb-3">
         <div class="input-group input-group-sm">
             <input type="text" name="search" class="form-control"
                    placeholder="Cari Kode / Nama / Plat..." value="{{ request('search') }}">

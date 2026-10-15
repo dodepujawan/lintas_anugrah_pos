@@ -1,16 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid" data-debug="transaksiKendaraanCreate">
     <div class="row mb-3">
         <div class="col">
             <h1 class="page-title mb-1">Tambah Kendaraan</h1>
         </div>
         <div class="col-auto">
-            <button type="submit" form="kendaraanForm" class="btn btn-success btn-sm">
+            <button type="submit" form="kendaraanForm" id="btnSimpanKendaraan" data-debug="transaksiKendaraanCreateSave" class="btn btn-success btn-sm">
                 <i class="bi bi-save"></i> Simpan
             </button>
-            <a href="{{ route('kendaraan.index') }}" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ route('kendaraan.index') }}" id="btnBatalKendaraan" data-debug="transaksiKendaraanCreateCancel" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-x-lg"></i> Batal
             </a>
         </div>
@@ -26,7 +26,7 @@
     </div>
     @endif
 
-    <form id="kendaraanForm" method="POST" action="{{ route('kendaraan.store') }}">
+    <form id="kendaraanForm" data-debug="transaksiKendaraanCreateForm" method="POST" action="{{ route('kendaraan.store') }}">
         @csrf
         <div class="card">
             <div class="card-body">

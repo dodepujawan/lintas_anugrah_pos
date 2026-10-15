@@ -97,7 +97,7 @@
                                 <select name="DRIVER" id="selectDriver1" data-debug="transaksiExpedisi_DRIVER" class="form-select form-select-sm select2-driver">
                                     <option value="">Pilih Driver</option>
                                     @foreach($drivers as $d)
-                                    <option value="{{ $d->NAMA ?? $d->name }}">{{ $d->getDisplayName() }}</option>
+                                    <option value="{{ $d->NAMA ?? $d->name }}">{{ $d->display_name }}</option>
                                     @endforeach
                                 </select>
                             </div>

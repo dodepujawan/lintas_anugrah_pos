@@ -260,6 +260,11 @@ $ php artisan test --filter=Transaksi
 | 2026-10-12 15:30 | FINAL VERIFY | 13/13 tests passed, route cache SUCCESS, 91 migrations ✅ |
 | 2026-10-15 00:15 | FASE 5 Step 1: Expedisi (EKS) | Fix view not found di expedisi-invoice + expedisi-kwitansi | Added 6 views, 3 PDF templates, 5 routes | Fixed surjal PDF (was kwitansi template with wrong vars) | Fixed kwitansi index Sisa calc (`$k->BAYAR`→`$k->SISA_FAKTUR`) | Added `show()` method to ExpedisiInvoiceController | Added `$signature`+`$rekening` to PDF methods | Debug attrs added to all views |
 | 2026-10-15 00:20 | Tests re-verify | 13/13 passed, route cache SUCCESS |
+| 2026-10-15 01:15 | Milestone: Driver accessor fix | Fixed `$d->getDisplayName()` → `$d->display_name` in expedisi create/edit (Driver model accessor, not method) |
+| 2026-10-15 01:18 | Milestone: Price views fix | Created 8 missing price views (price ×2, price-customer ×2, price-rent ×2, price-rent-customer ×2) |
+| 2026-10-15 01:19 | Milestone: Kendaraan fix | Removed unused Yajra DataTables import; Added `->except('show')` to kendaraan route (no show view) |
+| 2026-10-15 01:20 | Milestone: Debug attrs | Added data-debug attrs to kendarawan + price views |
+| 2026-10-15 01:22 | Tests re-verify | 13/13 passed, route cache SUCCESS |
 
 ---
 

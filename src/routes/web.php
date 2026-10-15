@@ -544,6 +544,7 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     | Master Data
     */
     Route::resource('kendaraan', KendaraanController::class)
+        ->except('show')
         ->parameters(['kendaraan' => 'kendaraan']);
 
     Route::resource('price', PriceController::class);

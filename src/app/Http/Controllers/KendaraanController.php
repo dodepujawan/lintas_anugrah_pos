@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Kendaraan;
 use Illuminate\Http\Request;
-use Yajra\DataTables\Facades\DataTables;
 
 class KendaraanController extends Controller
 {

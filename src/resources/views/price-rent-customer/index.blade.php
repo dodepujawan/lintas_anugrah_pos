@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row mb-3">
+<div class="container-fluid" data-debug="transaksiPriceRentCusIndex">
+    <div class="row mb-3" data-debug="transaksiPriceRentCusHeader">
         <div class="col">
             <h1 class="page-title mb-1">Price Rent Customer</h1>
             <p class="text-muted small mb-0">Master harga sewa customer</p>
         </div>
         <div class="col-auto">
-            <a href="{{ route('price-rent-customer.create') }}" class="btn btn-primary btn-sm">
+            <a href="{{ route('price-rent-customer.create') }}" id="btnTambahPriceRentCus" data-debug="transaksiPriceRentCusCreateBtn" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg"></i> Tambah
             </a>
         </div>

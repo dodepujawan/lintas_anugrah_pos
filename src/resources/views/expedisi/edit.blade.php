@@ -93,7 +93,7 @@
                             <option value="">Pilih Driver</option>
                             @foreach($drivers as $d)
                             <option value="{{ $d->NAMA ?? $d->name }}" {{ $expedisi->DRIVER == ($d->NAMA ?? $d->name) ? 'selected' : '' }}>
-                                {{ $d->getDisplayName() }}
+                                {{ $d->display_name }}
                             </option>
                             @endforeach
                         </select>
