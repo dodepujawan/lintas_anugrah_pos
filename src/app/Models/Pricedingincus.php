@@ -12,7 +12,13 @@ class Pricedingincus extends Model
     protected $table = 'pricedingincus';
 
     protected $fillable = [
-        'KODECUS', 'NAMACUS', 'FROM', 'TO', 'HARGA', 'TANGGAL',
-        'USER', 'USEREDIT',
+        'KODECUS', 'NAMACUS', 'KODEDGN', 'KODE',
+        'TANGGAL', 'PERIODE', 'PLAT', 'JENIS', 'ITEM',
+        'HARGA', 'KUNCI', 'USER', 'USEREDIT',
+        'FROM', 'TO',
+    ];
+
+    protected $casts = [
+        'TANGGAL' => 'date',
     ];
 }

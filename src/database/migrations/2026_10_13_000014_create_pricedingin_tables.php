@@ -10,12 +10,19 @@ return new class extends Migration
     {
         Schema::create('pricedingins', function (Blueprint $table) {
             $table->id();
-            $table->string('FROM', 30)->nullable();
-            $table->string('TO', 30)->nullable();
+            $table->string('KODEDGN', 20)->nullable();
+            $table->string('KODE', 20)->nullable();
+            $table->string('PERIODE', 50)->nullable();
+            $table->string('PLAT', 50)->nullable();
+            $table->string('JENIS', 50)->nullable();
+            $table->string('ITEM', 100)->nullable();
             $table->decimal('HARGA', 12, 0)->default(0);
-            $table->char('TANGGAL', 1)->nullable();
+            $table->date('TANGGAL')->nullable();
+            $table->string('KUNCI', 100)->nullable();
             $table->string('USER', 50)->nullable();
             $table->string('USEREDIT', 50)->nullable();
+            $table->string('FROM', 30)->nullable();
+            $table->string('TO', 30)->nullable();
             $table->nullableTimestamps();
 
             $table->index('FROM');
@@ -26,12 +33,19 @@ return new class extends Migration
             $table->id();
             $table->string('KODECUS', 50)->nullable();
             $table->string('NAMACUS', 50)->nullable();
-            $table->string('FROM', 30)->nullable();
-            $table->string('TO', 30)->nullable();
+            $table->string('KODEDGN', 20)->nullable();
+            $table->string('KODE', 20)->nullable();
+            $table->date('TANGGAL')->nullable();
+            $table->string('PERIODE', 50)->nullable();
+            $table->string('PLAT', 50)->nullable();
+            $table->string('JENIS', 50)->nullable();
+            $table->string('ITEM', 100)->nullable();
             $table->decimal('HARGA', 12, 0)->default(0);
-            $table->char('TANGGAL', 1)->nullable();
+            $table->string('KUNCI', 100)->nullable();
             $table->string('USER', 50)->nullable();
             $table->string('USEREDIT', 50)->nullable();
+            $table->string('FROM', 30)->nullable();
+            $table->string('TO', 30)->nullable();
             $table->nullableTimestamps();
 
             $table->index('KODECUS');
@@ -39,12 +53,15 @@ return new class extends Migration
 
         Schema::create('pricedinginhis', function (Blueprint $table) {
             $table->id();
-            $table->string('KODECUS', 50)->nullable();
-            $table->string('NAMACUS', 50)->nullable();
-            $table->string('FROM', 30)->nullable();
-            $table->string('TO', 30)->nullable();
+            $table->string('KODEDGN', 20)->nullable();
+            $table->string('KODE', 20)->nullable();
+            $table->date('TANGGAL')->nullable();
+            $table->string('PERIODE', 50)->nullable();
+            $table->string('PLAT', 50)->nullable();
+            $table->string('JENIS', 50)->nullable();
+            $table->string('ITEM', 100)->nullable();
             $table->decimal('HARGA', 12, 0)->default(0);
-            $table->char('TANGGAL', 1)->nullable();
+            $table->string('KUNCI', 100)->nullable();
             $table->string('USER', 50)->nullable();
             $table->string('USEREDIT', 50)->nullable();
             $table->nullableTimestamps();

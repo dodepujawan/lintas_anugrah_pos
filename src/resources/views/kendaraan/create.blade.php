@@ -49,11 +49,27 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">FNO PRK B</label>
-                        <input type="text" name="FNO_PRK_B" class="form-control form-control-sm">
+                        <input type="text" name="FNO_PRK_B" data-debug="transaksiKendaraanCreate_FNO_PRK_B" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">FNO PRK P</label>
+                        <input type="text" name="FNO_PRK_P" data-debug="transaksiKendaraanCreate_FNO_PRK_P" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">FNO PRK S</label>
+                        <input type="text" name="FNO_PRK_S" data-debug="transaksiKendaraanCreate_FNO_PRK_S" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">FNO PRK O</label>
+                        <input type="text" name="FNO_PRK_O" data-debug="transaksiKendaraanCreate_FNO_PRK_O" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">FNO PRK M</label>
+                        <input type="text" name="FNO_PRK_M" data-debug="transaksiKendaraanCreate_FNO_PRK_M" class="form-control form-control-sm">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">FNO PRK T</label>
-                        <input type="text" name="FNO_PRK_T" class="form-control form-control-sm">
+                        <input type="text" name="FNO_PRK_T" data-debug="transaksiKendaraanCreate_FNO_PRK_T" class="form-control form-control-sm">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">FNO PRK</label>

@@ -12,7 +12,14 @@ class Pricedingin extends Model
     protected $table = 'pricedingins';
 
     protected $fillable = [
-        'FROM', 'TO', 'HARGA', 'TANGGAL', 'USER', 'USEREDIT',
+        'KODEDGN', 'KODE', 'TANGGAL', 'PERIODE', 'PLAT',
+        'JENIS', 'ITEM', 'HARGA', 'KUNCI',
+        'USER', 'USEREDIT',
+        'FROM', 'TO',
+    ];
+
+    protected $casts = [
+        'TANGGAL' => 'date',
     ];
 
     public function pricendingincus()

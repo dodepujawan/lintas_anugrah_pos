@@ -12,6 +12,13 @@ class Price extends Model
     protected $table = 'prices';
 
     protected $fillable = [
-        'FROM', 'TO', 'HARGA', 'TANGGAL', 'USER', 'USEREDIT',
+        'KODE', 'FROM', 'TO', 'HARGA', 'TANGGAL',
+        'DARI', 'SAMPAI', 'RUTE', 'KETERANGAN',
+        'HV', 'HKG', 'HBOK', 'KUNCI', 'HG', 'JENIS',
+        'USER', 'USEREDIT',
+    ];
+
+    protected $casts = [
+        'TANGGAL' => 'date',
     ];
 }

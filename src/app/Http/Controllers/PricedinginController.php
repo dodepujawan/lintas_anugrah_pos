@@ -19,7 +19,9 @@ class PricedinginController extends Controller
         $search = trim((string) $request->input('search'));
         $prices = Pricedingin::query()
             ->when($search, function ($query) use ($search) {
-                $query->where('FROM', 'like', "%{$search}%")
+                $query->where('KODEDGN', 'like', "%{$search}%")
+                    ->orWhere('KODE', 'like', "%{$search}%")
+                    ->orWhere('FROM', 'like', "%{$search}%")
                     ->orWhere('TO', 'like', "%{$search}%");
             })
             ->orderBy('FROM')
@@ -37,10 +39,17 @@ class PricedinginController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'FROM' => 'required|string|max:30',
-            'TO' => 'required|string|max:30',
-            'HARGA' => 'required|numeric',
-            'TANGGAL' => 'nullable|string|max:1',
+            'KODEDGN' => 'nullable|string|max:20',
+            'KODE' => 'nullable|string|max:20',
+            'TANGGAL' => 'nullable|date',
+            'PERIODE' => 'nullable|string|max:50',
+            'PLAT' => 'nullable|string|max:50',
+            'JENIS' => 'nullable|string|max:50',
+            'ITEM' => 'nullable|string|max:100',
+            'HARGA' => 'nullable|numeric',
+            'KUNCI' => 'nullable|string|max:100',
+            'FROM' => 'nullable|string|max:30',
+            'TO' => 'nullable|string|max:30',
         ]);
 
         $user = $request->user()->name ?? 'system';
@@ -66,10 +75,17 @@ class PricedinginController extends Controller
     public function update(Request $request, Pricedingin $price)
     {
         $validated = $request->validate([
-            'FROM' => 'required|string|max:30',
-            'TO' => 'required|string|max:30',
-            'HARGA' => 'required|numeric',
-            'TANGGAL' => 'nullable|string|max:1',
+            'KODEDGN' => 'nullable|string|max:20',
+            'KODE' => 'nullable|string|max:20',
+            'TANGGAL' => 'nullable|date',
+            'PERIODE' => 'nullable|string|max:50',
+            'PLAT' => 'nullable|string|max:50',
+            'JENIS' => 'nullable|string|max:50',
+            'ITEM' => 'nullable|string|max:100',
+            'HARGA' => 'nullable|numeric',
+            'KUNCI' => 'nullable|string|max:100',
+            'FROM' => 'nullable|string|max:30',
+            'TO' => 'nullable|string|max:30',
         ]);
 
         $validated['USEREDIT'] = $request->user()->name ?? 'system';

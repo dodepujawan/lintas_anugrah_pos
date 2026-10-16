@@ -14,17 +14,29 @@
         </div>
     </div>
 
+    <form method="GET" id="formFilterPriceCus" data-debug="transaksiPriceCustomerFilter" class="mb-3">
+        <div class="input-group input-group-sm">
+            <input type="text" name="search" class="form-control"
+                   placeholder="Cari KODECUS / KODE / Nama..." value="{{ request('search') }}">
+            <button class="btn btn-primary" type="submit">Cari</button>
+            <a href="{{ route('price-customer.index') }}" class="btn btn-outline-secondary">Reset</a>
+        </div>
+    </form>
+
     <div class="card">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>No</th>
-                        <th>Kode Customer</th>
-                        <th>Nama</th>
+                        <th>KODECUS</th>
+                        <th>KODE</th>
+                        <th>NAMACUS</th>
                         <th>FROM</th>
                         <th>TO</th>
+                        <th>RUTE</th>
                         <th class="text-end">HARGA</th>
+                        <th>Tanggal</th>
                         <th class="text-end">Aksi</th>
                     </tr>
                 </thead>
@@ -33,16 +45,19 @@
                     <tr>
                         <td>{{ $priceCuses->firstItem() + $loop->index }}</td>
                         <td class="font-monospace">{{ $p->KODECUS }}</td>
-                        <td>{{ $p->NAMACUS }}</td>
-                        <td>{{ $p->FROM }}</td>
-                        <td>{{ $p->TO }}</td>
+                        <td>{{ $p->KODE ?? '-' }}</td>
+                        <td>{{ $p->NAMACUS ?? '-' }}</td>
+                        <td>{{ $p->FROM ?? '-' }}</td>
+                        <td>{{ $p->TO ?? '-' }}</td>
+                        <td>{{ $p->RUTE ?? '-' }}</td>
                         <td class="text-end">{{ number_format((float) $p->HARGA, 0, ',', '.') }}</td>
+                        <td>{{ $p->TANGGAL?->format('d/m/Y') ?? '-' }}</td>
                         <td class="text-end">
-                            <a href="{{ route('price-customer.edit', $p) }}" class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil"></i> Edit</a>
+                            <a href="{{ route('price-customer.edit', $p) }}" id="btnEditPriceCus_{{ $p->id }}" data-debug="transaksiPriceCustomerEditBtn_{{ $p->id }}" class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil"></i> Edit</a>
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="7" class="text-center py-4 text-muted">
+                    <tr><td colspan="11" class="text-center py-4 text-muted">
                         <i class="bi bi-inbox display-4"></i>
                         <p class="mt-2">Tidak ada data.</p>
                     </td></tr>

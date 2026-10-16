@@ -39,16 +39,34 @@ class PriceCusController extends Controller
     {
         $validated = $request->validate([
             'KODECUS' => 'required|string|max:50',
+            'KODE' => 'nullable|string|max:50',
             'NAMACUS' => 'nullable|string|max:50',
-            'FROM' => 'required|string|max:30',
-            'TO' => 'required|string|max:30',
-            'HARGA' => 'required|numeric',
-            'TANGGAL' => 'nullable|string|max:1',
+            'FROM' => 'nullable|string|max:30',
+            'TO' => 'nullable|string|max:30',
+            'HARGA' => 'nullable|numeric',
+            'TANGGAL' => 'nullable|date',
+            'DARI' => 'nullable|numeric',
+            'SAMPAI' => 'nullable|numeric',
+            'RUTE' => 'nullable|string|max:30',
+            'KETERANGAN' => 'nullable|string|max:50',
+            'HV' => 'nullable|numeric',
+            'HKG' => 'nullable|numeric',
+            'HBOK' => 'nullable|numeric',
+            'KUNCI' => 'nullable|string|max:100',
+            'HG' => 'nullable|numeric',
+            'JENIS' => 'nullable|string|max:1',
         ]);
 
         $user = $request->user()->name ?? 'system';
         $validated['USER'] = $user;
         $validated['USEREDIT'] = $user;
+
+        if (empty($validated['FROM']) && !empty($request->input('DARI'))) {
+            $validated['FROM'] = (string) $request->input('DARI');
+        }
+        if (empty($validated['TO']) && !empty($request->input('SAMPAI'))) {
+            $validated['TO'] = (string) $request->input('SAMPAI');
+        }
 
         PriceCus::create($validated);
 
@@ -67,14 +85,32 @@ class PriceCusController extends Controller
     {
         $validated = $request->validate([
             'KODECUS' => 'required|string|max:50',
+            'KODE' => 'nullable|string|max:50',
             'NAMACUS' => 'nullable|string|max:50',
-            'FROM' => 'required|string|max:30',
-            'TO' => 'required|string|max:30',
-            'HARGA' => 'required|numeric',
-            'TANGGAL' => 'nullable|string|max:1',
+            'FROM' => 'nullable|string|max:30',
+            'TO' => 'nullable|string|max:30',
+            'HARGA' => 'nullable|numeric',
+            'TANGGAL' => 'nullable|date',
+            'DARI' => 'nullable|numeric',
+            'SAMPAI' => 'nullable|numeric',
+            'RUTE' => 'nullable|string|max:30',
+            'KETERANGAN' => 'nullable|string|max:50',
+            'HV' => 'nullable|numeric',
+            'HKG' => 'nullable|numeric',
+            'HBOK' => 'nullable|numeric',
+            'KUNCI' => 'nullable|string|max:100',
+            'HG' => 'nullable|numeric',
+            'JENIS' => 'nullable|string|max:1',
         ]);
 
         $validated['USEREDIT'] = $request->user()->name ?? 'system';
+
+        if (empty($validated['FROM']) && !empty($request->input('DARI'))) {
+            $validated['FROM'] = (string) $request->input('DARI');
+        }
+        if (empty($validated['TO']) && !empty($request->input('SAMPAI'))) {
+            $validated['TO'] = (string) $request->input('SAMPAI');
+        }
 
         $priceCus->update($validated);
 

@@ -49,11 +49,27 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">FNO PRK B</label>
-                        <input type="text" name="FNO_PRK_B" class="form-control form-control-sm" value="{{ $kendaraan->FNO_PRK_B }}">
+                        <input type="text" name="FNO_PRK_B" data-debug="transaksiKendaraanEdit_FNO_PRK_B" class="form-control form-control-sm" value="{{ $kendaraan->FNO_PRK_B }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">FNO PRK P</label>
+                        <input type="text" name="FNO_PRK_P" data-debug="transaksiKendaraanEdit_FNO_PRK_P" class="form-control form-control-sm" value="{{ $kendaraan->FNO_PRK_P }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">FNO PRK S</label>
+                        <input type="text" name="FNO_PRK_S" data-debug="transaksiKendaraanEdit_FNO_PRK_S" class="form-control form-control-sm" value="{{ $kendaraan->FNO_PRK_S }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">FNO PRK O</label>
+                        <input type="text" name="FNO_PRK_O" data-debug="transaksiKendaraanEdit_FNO_PRK_O" class="form-control form-control-sm" value="{{ $kendaraan->FNO_PRK_O }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">FNO PRK M</label>
+                        <input type="text" name="FNO_PRK_M" data-debug="transaksiKendaraanEdit_FNO_PRK_M" class="form-control form-control-sm" value="{{ $kendaraan->FNO_PRK_M }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">FNO PRK T</label>
-                        <input type="text" name="FNO_PRK_T" class="form-control form-control-sm" value="{{ $kendaraan->FNO_PRK_T }}">
+                        <input type="text" name="FNO_PRK_T" data-debug="transaksiKendaraanEdit_FNO_PRK_T" class="form-control form-control-sm" value="{{ $kendaraan->FNO_PRK_T }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">FNO PRK</label>

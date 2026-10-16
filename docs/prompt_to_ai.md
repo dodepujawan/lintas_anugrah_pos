@@ -14,6 +14,3 @@ Harap Kerjakan tahap per tahap ya, jangan langsung semua dikerjakan samapi seles
 jangan lupa selesai coding catat progress ke path docs/progress_migrasi.md
 -> upayakan untuk menambah attribut unik untuk memudahkan tracing debung programmer contoh data-debug="transaksiExpedisiCreateBtn" jadi enak klik kanan inspect copy di vscode tinggal search global maka langsung bisa pilih halaman exact
 -> upayakan jangan merusak file atau kode asli src karna itu isinya akuntansi perusahaan !
-
-Atau — lebih singkat:
-"Lanjutkan project migrasi src_old→src. Baca docs/progress_migrasi.md untuk konteks. Fokus ke Fase 5 — 8 view + 8 PDF template yang belum selesai. Backend (migration, model, controller, routes, test) sudah 100% complete."

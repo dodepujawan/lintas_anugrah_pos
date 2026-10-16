@@ -4,7 +4,7 @@
 <div class="container-fluid" data-debug="transaksiKendaraanIndex">
     <div class="row mb-3" data-debug="transaksiKendaraanHeader">
         <div class="col">
-            <h1 class="page-title mb-1">Kendaraam</h1>
+            <h1 class="page-title mb-1">Kendaraan</h1>
             <p class="text-muted small mb-0">Daftar kendaraan operasional</p>
         </div>
         <div class="col-auto">
@@ -33,6 +33,10 @@
                         <th>Nama</th>
                         <th>Plat</th>
                         <th>FNO PRK B</th>
+                        <th>FNO PRK P</th>
+                        <th>FNO PRK S</th>
+                        <th>FNO PRK O</th>
+                        <th>FNO PRK M</th>
                         <th>FNO PRK T</th>
                         <th>Jenis</th>
                         <th class="text-end">Aksi</th>
@@ -46,6 +50,10 @@
                         <td>{{ $k->NAMA }}</td>
                         <td class="font-monospace">{{ $k->PLAT }}</td>
                         <td>{{ $k->FNO_PRK_B }}</td>
+                        <td>{{ $k->FNO_PRK_P }}</td>
+                        <td>{{ $k->FNO_PRK_S }}</td>
+                        <td>{{ $k->FNO_PRK_O }}</td>
+                        <td>{{ $k->FNO_PRK_M }}</td>
                         <td>{{ $k->FNO_PRK_T }}</td>
                         <td>{{ $k->JENIS }}</td>
                         <td class="text-end">
@@ -56,7 +64,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center py-4 text-muted">
+                        <td colspan="12" class="text-center py-4 text-muted">
                             <i class="bi bi-inbox display-4"></i>
                             <p class="mt-2">Tidak ada data kendaraan.</p>
                         </td>

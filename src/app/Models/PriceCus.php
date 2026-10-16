@@ -12,7 +12,14 @@ class PriceCus extends Model
     protected $table = 'pricecus';
 
     protected $fillable = [
-        'KODECUS', 'NAMACUS', 'FROM', 'TO', 'HARGA', 'TANGGAL',
+        'KODECUS', 'KODE', 'NAMACUS', 'FROM', 'TO',
+        'HARGA', 'TANGGAL', 'DARI', 'SAMPAI', 'RUTE',
+        'KETERANGAN', 'HV', 'HKG', 'HBOK',
+        'KUNCI', 'HG', 'JENIS',
         'USER', 'USEREDIT', 'kode_index',
+    ];
+
+    protected $casts = [
+        'TANGGAL' => 'date',
     ];
 }

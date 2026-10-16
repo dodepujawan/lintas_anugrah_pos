@@ -21,7 +21,9 @@ class PricedingincusController extends Controller
         $prices = Pricedingincus::query()
             ->when($search, function ($query) use ($search) {
                 $query->where('KODECUS', 'like', "%{$search}%")
-                    ->orWhere('NAMACUS', 'like', "%{$search}%");
+                    ->orWhere('NAMACUS', 'like', "%{$search}%")
+                    ->orWhere('KODEDGN', 'like', "%{$search}%")
+                    ->orWhere('KODE', 'like', "%{$search}%");
             })
             ->orderBy('FROM')
             ->paginate(20)
@@ -40,10 +42,17 @@ class PricedingincusController extends Controller
         $validated = $request->validate([
             'KODECUS' => 'required|string|max:50',
             'NAMACUS' => 'nullable|string|max:50',
-            'FROM' => 'required|string|max:30',
-            'TO' => 'required|string|max:30',
-            'HARGA' => 'required|numeric',
-            'TANGGAL' => 'nullable|string|max:1',
+            'KODEDGN' => 'nullable|string|max:20',
+            'KODE' => 'nullable|string|max:20',
+            'TANGGAL' => 'nullable|date',
+            'PERIODE' => 'nullable|string|max:50',
+            'PLAT' => 'nullable|string|max:50',
+            'JENIS' => 'nullable|string|max:50',
+            'ITEM' => 'nullable|string|max:100',
+            'HARGA' => 'nullable|numeric',
+            'KUNCI' => 'nullable|string|max:100',
+            'FROM' => 'nullable|string|max:30',
+            'TO' => 'nullable|string|max:30',
         ]);
 
         $user = $request->user()->name ?? 'system';
@@ -67,10 +76,17 @@ class PricedingincusController extends Controller
         $validated = $request->validate([
             'KODECUS' => 'required|string|max:50',
             'NAMACUS' => 'nullable|string|max:50',
-            'FROM' => 'required|string|max:30',
-            'TO' => 'required|string|max:30',
-            'HARGA' => 'required|numeric',
-            'TANGGAL' => 'nullable|string|max:1',
+            'KODEDGN' => 'nullable|string|max:20',
+            'KODE' => 'nullable|string|max:20',
+            'TANGGAL' => 'nullable|date',
+            'PERIODE' => 'nullable|string|max:50',
+            'PLAT' => 'nullable|string|max:50',
+            'JENIS' => 'nullable|string|max:50',
+            'ITEM' => 'nullable|string|max:100',
+            'HARGA' => 'nullable|numeric',
+            'KUNCI' => 'nullable|string|max:100',
+            'FROM' => 'nullable|string|max:30',
+            'TO' => 'nullable|string|max:30',
         ]);
 
         $validated['USEREDIT'] = $request->user()->name ?? 'system';

@@ -50,6 +50,11 @@ class ModelTest extends TestCase
             'NAMA' => 'TOYOTA Hilux',
             'PLAT' => 'B 1234 CD',
             'FNO_PRK_B' => 'PRKB001',
+            'FNO_PRK_P' => 'PRKP001',
+            'FNO_PRK_S' => 'PRKS001',
+            'FNO_PRK_O' => 'PRKO001',
+            'FNO_PRK_M' => 'PRKM001',
+            'FNO_PRK_T' => 'PRKT001',
             'JENIS' => 'E',
         ]);
 

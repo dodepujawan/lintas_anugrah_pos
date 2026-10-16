@@ -11,11 +11,22 @@ return new class extends Migration
         Schema::create('pricecus', function (Blueprint $table) {
             $table->id();
             $table->string('KODECUS', 50)->nullable();
+            $table->string('KODE', 50)->nullable();
             $table->string('NAMACUS', 50)->nullable();
+            $table->date('TANGGAL')->nullable();
+            $table->string('KETERANGAN', 50)->nullable();
+            $table->decimal('DARI', 10, 0)->default(0);
+            $table->decimal('SAMPAI', 10, 0)->default(0);
             $table->string('FROM', 30)->nullable();
             $table->string('TO', 30)->nullable();
+            $table->string('RUTE', 30)->nullable();
             $table->decimal('HARGA', 12, 0)->default(0);
-            $table->char('TANGGAL', 1)->nullable();
+            $table->decimal('HV', 10, 0)->default(0);
+            $table->decimal('HKG', 10, 0)->default(0);
+            $table->decimal('HBOK', 10, 0)->default(0);
+            $table->string('KUNCI', 100)->nullable();
+            $table->decimal('HG', 1, 0)->default(0);
+            $table->string('JENIS', 1)->nullable();
             $table->string('USER', 50)->nullable();
             $table->string('USEREDIT', 50)->nullable();
             $table->nullableTimestamps();
@@ -26,11 +37,22 @@ return new class extends Migration
         Schema::create('pricecushis', function (Blueprint $table) {
             $table->id();
             $table->string('KODECUS', 50)->nullable();
+            $table->string('KODE', 50)->nullable();
             $table->string('NAMACUS', 50)->nullable();
+            $table->date('TANGGAL')->nullable();
+            $table->string('KETERANGAN', 50)->nullable();
+            $table->decimal('DARI', 10, 0)->default(0);
+            $table->decimal('SAMPAI', 10, 0)->default(0);
             $table->string('FROM', 30)->nullable();
             $table->string('TO', 30)->nullable();
+            $table->string('RUTE', 30)->nullable();
             $table->decimal('HARGA', 12, 0)->default(0);
-            $table->char('TANGGAL', 1)->nullable();
+            $table->decimal('HV', 10, 0)->default(0);
+            $table->decimal('HKG', 10, 0)->default(0);
+            $table->decimal('HBOK', 10, 0)->default(0);
+            $table->string('KUNCI', 100)->nullable();
+            $table->decimal('HG', 1, 0)->default(0);
+            $table->string('JENIS', 1)->nullable();
             $table->string('USER', 50)->nullable();
             $table->string('USEREDIT', 50)->nullable();
             $table->nullableTimestamps();

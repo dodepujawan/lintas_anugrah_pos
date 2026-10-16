@@ -14,6 +14,10 @@ return new class extends Migration
             $table->char('NAMA', 50)->nullable();
             $table->char('PLAT', 20)->nullable();
             $table->char('FNO_PRK_B', 15)->nullable();
+            $table->char('FNO_PRK_P', 20)->nullable();
+            $table->char('FNO_PRK_S', 20)->nullable();
+            $table->char('FNO_PRK_O', 20)->nullable();
+            $table->char('FNO_PRK_M', 20)->nullable();
             $table->char('FNO_PRK_T', 15)->nullable();
             $table->char('JENIS', 1)->nullable();
             $table->char('FNO_PRK', 13)->nullable();

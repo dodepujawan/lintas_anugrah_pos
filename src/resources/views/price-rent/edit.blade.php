@@ -26,26 +26,54 @@
     </div>
     @endif
 
-    <form id="priceForm" method="POST" action="{{ route('price-rent.update', $price) }}">
+    <form id="priceForm" data-debug="transaksiPriceRentEditForm" method="POST" action="{{ route('price-rent.update', $price) }}">
         @csrf @method('PUT')
         <div class="card">
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">FROM <span class="text-danger">*</span></label>
-                        <input type="text" name="FROM" data-debug="transaksiPriceRentEdit_FROM" class="form-control form-control-sm" value="{{ $price->FROM }}" required>
+                    <div class="col-md-2">
+                        <label class="form-label">KODEDGN</label>
+                        <input type="text" name="KODEDGN" data-debug="transaksiPriceRentEdit_KODEDGN" class="form-control form-control-sm" value="{{ $price->KODEDGN }}">
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">TO <span class="text-danger">*</span></label>
-                        <input type="text" name="TO" data-debug="transaksiPriceRentEdit_TO" class="form-control form-control-sm" value="{{ $price->TO }}" required>
+                    <div class="col-md-2">
+                        <label class="form-label">KODE</label>
+                        <input type="text" name="KODE" data-debug="transaksiPriceRentEdit_KODE" class="form-control form-control-sm" value="{{ $price->KODE }}">
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">HARGA <span class="text-danger">*</span></label>
-                        <input type="number" name="HARGA" data-debug="transaksiPriceRentEdit_HARGA" class="form-control form-control-sm" value="{{ $price->HARGA }}" required>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label">TANGGAL</label>
-                        <input type="text" name="TANGGAL" data-debug="transaksiPriceRentEdit_TANGGAL" class="form-control form-control-sm" maxlength="1" value="{{ $price->TANGGAL }}">
+                        <input type="date" name="TANGGAL" data-debug="transaksiPriceRentEdit_TANGGAL" class="form-control form-control-sm" value="{{ $price->TANGGAL?->format('Y-m-d') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">PERIODE</label>
+                        <input type="text" name="PERIODE" data-debug="transaksiPriceRentEdit_PERIODE" class="form-control form-control-sm" value="{{ $price->PERIODE }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">PLAT</label>
+                        <input type="text" name="PLAT" data-debug="transaksiPriceRentEdit_PLAT" class="form-control form-control-sm" value="{{ $price->PLAT }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">JENIS</label>
+                        <input type="text" name="JENIS" data-debug="transaksiPriceRentEdit_JENIS" class="form-control form-control-sm" value="{{ $price->JENIS }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">ITEM</label>
+                        <input type="text" name="ITEM" data-debug="transaksiPriceRentEdit_ITEM" class="form-control form-control-sm" value="{{ $price->ITEM }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">FROM</label>
+                        <input type="text" name="FROM" data-debug="transaksiPriceRentEdit_FROM" class="form-control form-control-sm" value="{{ $price->FROM }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">TO</label>
+                        <input type="text" name="TO" data-debug="transaksiPriceRentEdit_TO" class="form-control form-control-sm" value="{{ $price->TO }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">HARGA</label>
+                        <input type="number" name="HARGA" data-debug="transaksiPriceRentEdit_HARGA" class="form-control form-control-sm" value="{{ $price->HARGA }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">KUNCI</label>
+                        <input type="text" name="KUNCI" data-debug="transaksiPriceRentEdit_KUNCI" class="form-control form-control-sm" value="{{ $price->KUNCI }}">
                     </div>
                 </div>
             </div>

@@ -14,7 +14,8 @@ class Kendaraan extends Model
     public $timestamps = true;
 
     protected $fillable = [
-        'KODE', 'NAMA', 'PLAT', 'FNO_PRK_B', 'FNO_PRK_T',
+        'KODE', 'NAMA', 'PLAT', 'FNO_PRK_B', 'FNO_PRK_P', 'FNO_PRK_S',
+        'FNO_PRK_O', 'FNO_PRK_M', 'FNO_PRK_T',
         'JENIS', 'FNO_PRK', 'NO_BKK', 'KENDARAAN_TYPE',
         'USER', 'USEREDIT',
     ];

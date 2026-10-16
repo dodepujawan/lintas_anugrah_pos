@@ -15,7 +15,7 @@ FASE 1: Migration Foundation          [██████████] 100% ✅ 
 FASE 2: Models                        [██████████] 100% ✅ Selesai (17 file)
 FASE 3: Controllers                   [██████████] 100% ✅ Selesai (21 file)
 FASE 4: Routes + Menu registration    [██████████] 100% ✅ Selesai (141 routes, 28 menu)
-FASE 5: Views                         [███████░░░░░]  70% (16/25 dirs + 4/9 PDF) — IN PROGRESS
+FASE 5: Views                         [███████░░░░░]  70% (16/25 dirs + 4/9 PDF) — Step 1 (EKS) COMPLETE, Step 2 (REN) pending review
 FASE 6: Testing                       [██████████] 100% ✅ 13/13 tests passed (61 assertions)
 ────────────────────────────────────────────────────────────
 TOTAL                              [███████░░░░░░]  84%
@@ -264,7 +264,42 @@ $ php artisan test --filter=Transaksi
 | 2026-10-15 01:18 | Milestone: Price views fix | Created 8 missing price views (price ×2, price-customer ×2, price-rent ×2, price-rent-customer ×2) |
 | 2026-10-15 01:19 | Milestone: Kendaraan fix | Removed unused Yajra DataTables import; Added `->except('show')` to kendaraan route (no show view) |
 | 2026-10-15 01:20 | Milestone: Debug attrs | Added data-debug attrs to kendarawan + price views |
+| 2026-10-15 00:22 | Tests re-verify | 13/13 passed, route cache SUCCESS |
+| 2026-10-15 01:15 | Milestone: Driver accessor fix | Fixed `$d->getDisplayName()` → `$d->display_name` in expedisi create/edit (Driver model accessor, not method) |
+| 2026-10-15 01:18 | Milestone: Price views | Created 8 missing price views (price ×2, price-customer ×2, price-rent ×2, price-rent-customer ×2) |
+| 2026-10-15 01:19 | Milestone: Kendaraan fix | Removed unused Yajra DataTables import; Added `->except('show')` to kendaraan route (no show view) |
+| 2026-10-15 01:20 | Milestone: Debug attrs | Added data-debug attrs to kendarawan + price views |
 | 2026-10-15 01:22 | Tests re-verify | 13/13 passed, route cache SUCCESS |
+| 2026-10-16 09:30 | Bug fix: FNO_PRK_P/S/O/M missing columns (#1054) | Added `FNO_PRK_P`, `FNO_PRK_S`, `FNO_PRK_O`, `FNO_PRK_M` to kendaraans: original migration + new migration `2026_10_16_091500` + model + controller + views; Original migration already ran so created new migration for existing DB | 13/13 tests pass |
+| 2026-10-16 09:50 | Bug fix: prices #1054 unknown column KODE | Added ALL legacy columns (KODE, KETERANGAN, DARI, SAMPAI, RUTE, HV, HKG, HBOK, KUNCI, HG, JENIS) to prices migration + new migration + model + controller + views; Changed TANGGAL char(1)→date; Controller auto-maps DARI→FROM, SAMPAI→TO if FROM/TO empty | 13/13 tests pass |
+| 2026-10-16 09:50 | Bug fix: pricecus #1054 same pattern as prices | Same fix for pricecus/pricecushis + new migration `2026_10_16_093000` + model + controller + all price-customer views rewritten with legacy cols | 13/13 tests pass |
+| 2026-10-16 09:52 | Bug fix: pricedingin/pricedingincus #1054 | Added KODEDGN, KODE, PERIODE, PLAT, JENIS, ITEM, KUNCI to pricedingin tables + migration + model + controller + all price-rent views | 13/13 tests pass |
+| 2026-10-16 09:55 | Tests re-verify | 13/13 passed, route cache SUCCESS |
+| 2026-10-16 10:30 | Fix: migration edit after run | User complaint: edited migration 093000 setelah sudah di-run → gak work. Created 2 NEW migration files (103000 + 103500) untuk pricecushis + pricedingin tables yang belum ter-apply | 13/13 tests pass |
+| 2026-10-16 10:35 | Fix: SQLite MODIFY COLUMN error | Wrapped MySQL-specific `ALTER TABLE` in `if (DB::getDriverName() === 'mysql')` | 13/13 tests pass |
+| 2026-10-16 10:45 | Fix: TANGGAL mysql strict mode error | `SET SESSION sql_mode = ''` + clean `updated_at`/`created_at` (0000-00-00→NULL) + clean TANGGAL (single-char→NULL) BEFORE ALTER TABLE | 13/13 tests pass |
+| 2026-10-16 10:48 | Fix: missing closing brace in migration | Added `};` di akhir file `103000` | 13/13 tests pass |
+| 2026-10-16 10:47 | Tests re-verify | 13/13 passed, route cache SUCCESS |
+
+---
+
+## 📊 Migration File Status (untuk user)
+
+### SUDAH DI-RUN oleh user (jangan di-edit lagi):
+- `2026_10_16_000001_add_fno_prk_p_to_kendaraans.php` ✅
+- `2026_10_16_093000_add_price_legacy_columns.php` ✅ (hanya pricecus kolom)
+
+### BARU — belum di-run, jalankan `php artisan migrate`:
+- `2026_10_16_091500_add_fno_prk_som_to_kendaraans.php` — FNO_PRK_S/O/M untuk kendaraans
+- `2026_10_16_103000_add_price_legacy_columns_v2.php` — pricecushis kolom + prices kolom tambahan + TANGGAL date fix (MySQL only)
+- `2026_10_16_103500_add_pricedingin_legacy_columns.php` — pricedingins + pricedingincus + pricedinginhis kolom
+
+### Untuk user — jalankan di server:
+```bash
+cd /home/dode/project/lintas_anugrah_pos/src
+php artisan config:clear && php artisan cache:clear
+php artisan migrate  # akan jalan 3 migration baru di atas
+```
 
 ---
 
