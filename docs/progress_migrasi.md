@@ -21,6 +21,8 @@ FASE 6: Testing                       [██████████] 100% ✅ 
 TOTAL                              [███████░░░░░░]  84%
 ```
 
+**Update 2026-10-18:** Price module enhanced — auto KODE generation, KUNCI generation, pricecus sync, simplified forms, delete button with transaction check for kendaraan.
+
 ---
 
 ## 🔨 FASE 1: Migration Foundation ✅ DONE
@@ -280,6 +282,7 @@ $ php artisan test --filter=Transaksi
 | 2026-10-16 10:45 | Fix: TANGGAL mysql strict mode error | `SET SESSION sql_mode = ''` + clean `updated_at`/`created_at` (0000-00-00→NULL) + clean TANGGAL (single-char→NULL) BEFORE ALTER TABLE | 13/13 tests pass |
 | 2026-10-16 10:48 | Fix: missing closing brace in migration | Added `};` di akhir file `103000` | 13/13 tests pass |
 | 2026-10-16 10:47 | Tests re-verify | 13/13 passed, route cache SUCCESS |
+| 2026-10-18 10:00 | Milestone: Price module enhancement | Updated PriceController: auto-generate KODE (PRC0000001+), set default HV/HKG/HBOK/HG=0, generate KUNCI, sync to pricecus on store/update. Updated price/index.blade.php: columns KETERANGAN/DARI/SAMPAI/RUTE/HARGA/JENIS, tombol aksi ikon-only rata tengah. Updated price/create.blade.php + edit.blade.php: simplified form (Nama Item, DARI, SAMPAI, RUTE, HARGA, JENIS radio Eceran/Booking). Added expedisis() relasi to Kendaraan model. Added delete button to kendaraan/index.blade.php with transaction check. | 13/13 tests pass |
 
 ---
 
