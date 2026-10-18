@@ -10,7 +10,7 @@
             <button type="submit" form="priceForm" id="btnSimpanPriceCus" data-debug="transaksiPriceCustomerCreateSave" class="btn btn-success btn-sm">
                 <i class="bi bi-save"></i> Simpan
             </button>
-            <a href="{{ route('price-customer.index') }}" id="btnBatalPriceCus" data-debug="transaksiPriceCustomerCreateCancel" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ $customer ? route('price-customer.customer-prices', $customer->CUSTOMER) : route('price-customer.index') }}" id="btnBatalPriceCus" data-debug="transaksiPriceCustomerCreateCancel" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-x-lg"></i> Batal
             </a>
         </div>

@@ -10,7 +10,7 @@
             <button type="submit" form="priceForm" id="btnSimpanPriceCusEdit" data-debug="transaksiPriceCustomerEditSave" class="btn btn-success btn-sm">
                 <i class="bi bi-save"></i> Simpan
             </button>
-            <a href="{{ route('price-customer.index') }}" id="btnBatalPriceCusEdit" data-debug="transaksiPriceCustomerEditCancel" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ route('price-customer.customer-prices', $priceCus->KODECUS) }}" id="btnBatalPriceCusEdit" data-debug="transaksiPriceCustomerEditCancel" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-x-lg"></i> Batal
             </a>
         </div>
