@@ -39,7 +39,7 @@
                         <th>FNO PRK M</th>
                         <th>FNO PRK T</th>
                         <th>Jenis</th>
-                        <th class="text-end">Aksi</th>
+                        <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,10 +56,19 @@
                         <td>{{ $k->FNO_PRK_M }}</td>
                         <td>{{ $k->FNO_PRK_T }}</td>
                         <td>{{ $k->JENIS }}</td>
-                        <td class="text-end">
-                            <a href="{{ route('kendaraan.edit', $k) }}" id="btnEditKendaraan-{{ $k->id }}" data-debug="transaksiKendaraanEdit" class="btn btn-sm btn-outline-warning">
-                                <i class="bi bi-pencil"></i> Edit
-                            </a>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{{ route('kendaraan.edit', $k) }}" id="btnEditKendaraan-{{ $k->id }}" data-debug="transaksiKendaraanEdit" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form class="d-inline" method="POST" action="{{ route('kendaraan.destroy', $k) }}" onsubmit="return confirm('Hapus kendaraan {{ $k->KODE }}?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty

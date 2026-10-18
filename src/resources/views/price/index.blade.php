@@ -17,7 +17,7 @@
     <form method="GET" id="formFilterPrice" data-debug="transaksiPriceFilter" class="mb-3">
         <div class="input-group input-group-sm">
             <input type="text" name="search" class="form-control"
-                   placeholder="Cari KODE / FROM / TO..." value="{{ request('search') }}">
+                   placeholder="Cari KODE / NAMA ITEM / DARI / SAMPAI / RUTE..." value="{{ request('search') }}">
             <button class="btn btn-primary" type="submit">Cari</button>
             <a href="{{ route('price.index') }}" class="btn btn-outline-secondary">Reset</a>
         </div>
@@ -30,13 +30,13 @@
                     <tr>
                         <th>No</th>
                         <th>KODE</th>
-                        <th>FROM</th>
-                        <th>TO</th>
-                        <th class="text-end">HARGA</th>
-                        <th>Tanggal</th>
+                        <th>NAMA ITEM</th>
+                        <th>DARI</th>
+                        <th>SAMPAI</th>
                         <th>RUTE</th>
-                        <th>Keterangan</th>
-                        <th class="text-end">Aksi</th>
+                        <th class="text-end">HARGA</th>
+                        <th>JENIS</th>
+                        <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -44,14 +44,25 @@
                     <tr>
                         <td>{{ $prices->firstItem() + $loop->index }}</td>
                         <td class="font-monospace">{{ $p->KODE ?? '-' }}</td>
-                        <td>{{ $p->FROM ?? '-' }}</td>
-                        <td>{{ $p->TO ?? '-' }}</td>
-                        <td class="text-end">{{ number_format((float) $p->HARGA, 0, ',', '.') }}</td>
-                        <td>{{ $p->TANGGAL?->format('Y-m-d') ?? '-' }}</td>
-                        <td>{{ $p->RUTE ?? '-' }}</td>
                         <td>{{ $p->KETERANGAN ?? '-' }}</td>
-                        <td class="text-end">
-                            <a href="{{ route('price.edit', $p) }}" id="btnEditPrice_{{ $p->id }}" data-debug="transaksiPriceEditBtn_{{ $p->id }}" class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil"></i> Edit</a>
+                        <td>{{ $p->DARI ?? '-' }}</td>
+                        <td>{{ $p->SAMPAI ?? '-' }}</td>
+                        <td>{{ $p->RUTE ?? '-' }}</td>
+                        <td class="text-end">{{ number_format((float) $p->HARGA, 0, ',', '.') }}</td>
+                        <td>{{ $p->JENIS == 1 ? 'Eceran' : ($p->JENIS == 2 ? 'Booking' : '-') }}</td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{{ route('price.edit', $p) }}" id="btnEditPrice_{{ $p->id }}" data-debug="transaksiPriceEditBtn_{{ $p->id }}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form class="d-inline" method="POST" action="{{ route('price.destroy', $p) }}" onsubmit="return confirm('Hapus price {{ $p->KODE ?? $p->KETERANGAN }}?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty

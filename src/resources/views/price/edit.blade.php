@@ -31,65 +31,38 @@
         <div class="card">
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-2">
-                        <label class="form-label">KODE</label>
-                        <input type="text" name="KODE" data-debug="transaksiPriceEdit_KODE" class="form-control form-control-sm" value="{{ $price->KODE }}">
+                    <div class="col-md-4">
+                        <label class="form-label">Nama Item</label>
+                        <input type="text" name="KETERANGAN" data-debug="transaksiPriceEdit_KETERANGAN" class="form-control form-control-sm" value="{{ $price->KETERANGAN }}" placeholder="Contoh: EC > 40 KG">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">FROM</label>
-                        <input type="text" name="FROM" data-debug="transaksiPriceEdit_FROM" class="form-control form-control-sm" value="{{ $price->FROM }}">
+                        <label class="form-label">DARI (Kg)</label>
+                        <input type="number" name="DARI" data-debug="transaksiPriceEdit_DARI" class="form-control form-control-sm" value="{{ $price->DARI }}" placeholder="0">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">TO</label>
-                        <input type="text" name="TO" data-debug="transaksiPriceEdit_TO" class="form-control form-control-sm" value="{{ $price->TO }}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">HARGA</label>
-                        <input type="number" name="HARGA" data-debug="transaksiPriceEdit_HARGA" class="form-control form-control-sm" value="{{ $price->HARGA }}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">TANGGAL</label>
-                        <input type="date" name="TANGGAL" data-debug="transaksiPriceEdit_TANGGAL" class="form-control form-control-sm" value="{{ $price->TANGGAL?->format('Y-m-d') }}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">DARI</label>
-                        <input type="number" name="DARI" data-debug="transaksiPriceEdit_DARI" class="form-control form-control-sm" value="{{ $price->DARI }}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">SAMPAI</label>
-                        <input type="number" name="SAMPAI" data-debug="transaksiPriceEdit_SAMPAI" class="form-control form-control-sm" value="{{ $price->SAMPAI }}">
+                        <label class="form-label">SAMPAI (Kg)</label>
+                        <input type="number" name="SAMPAI" data-debug="transaksiPriceEdit_SAMPAI" class="form-control form-control-sm" value="{{ $price->SAMPAI }}" placeholder="0">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">RUTE</label>
-                        <input type="text" name="RUTE" data-debug="transaksiPriceEdit_RUTE" class="form-control form-control-sm" value="{{ $price->RUTE }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">KETERANGAN</label>
-                        <input type="text" name="KETERANGAN" data-debug="transaksiPriceEdit_KETERANGAN" class="form-control form-control-sm" value="{{ $price->KETERANGAN }}">
+                        <input type="text" name="RUTE" data-debug="transaksiPriceEdit_RUTE" class="form-control form-control-sm" value="{{ $price->RUTE }}" placeholder="Contoh: DIY - DPS">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">HV</label>
-                        <input type="number" name="HV" data-debug="transaksiPriceEdit_HV" class="form-control form-control-sm" value="{{ $price->HV }}">
+                        <label class="form-label">HARGA</label>
+                        <input type="number" name="HARGA" data-debug="transaksiPriceEdit_HARGA" class="form-control form-control-sm" value="{{ $price->HARGA }}" placeholder="0">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">HKG</label>
-                        <input type="number" name="HKG" data-debug="transaksiPriceEdit_HKG" class="form-control form-control-sm" value="{{ $price->HKG }}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">HBOK</label>
-                        <input type="number" name="HBOK" data-debug="transaksiPriceEdit_HBOK" class="form-control form-control-sm" value="{{ $price->HBOK }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">KUNCI</label>
-                        <input type="text" name="KUNCI" data-debug="transaksiPriceEdit_KUNCI" class="form-control form-control-sm" value="{{ $price->KUNCI }}">
-                    </div>
-                    <div class="col-md-1">
-                        <label class="form-label">HG</label>
-                        <input type="number" name="HG" data-debug="transaksiPriceEdit_HG" class="form-control form-control-sm" value="{{ $price->HG }}">
-                    </div>
-                    <div class="col-md-1">
                         <label class="form-label">JENIS</label>
-                        <input type="text" name="JENIS" data-debug="transaksiPriceEdit_JENIS" class="form-control form-control-sm" maxlength="1" value="{{ $price->JENIS }}">
+                        <div class="d-flex gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="JENIS" value="1" id="jenisEceran" {{ $price->JENIS == 1 ? 'checked' : '' }}>
+                                <label class="form-check-label" for="jenisEceran">Eceran</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="JENIS" value="2" id="jenisBoking" {{ $price->JENIS == 2 ? 'checked' : '' }}>
+                                <label class="form-check-label" for="jenisBoking">Boking</label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

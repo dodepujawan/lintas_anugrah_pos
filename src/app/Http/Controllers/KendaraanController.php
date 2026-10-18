@@ -105,6 +105,10 @@ class KendaraanController extends Controller
 
     public function destroy(Kendaraan $kendaraan)
     {
+        if ($kendaraan->expedisis()->exists()) {
+            return back()->with('error', 'Kendaraan sudah ada di transaksi dan tidak dapat dihapus.');
+        }
+
         $kendaraan->delete();
 
         return redirect()->route('kendaraan.index')

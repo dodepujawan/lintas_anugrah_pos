@@ -45,6 +45,11 @@ class Driver extends Model
         return $this->hasMany(Expedisi::class, 'DRIVER', 'KODE');
     }
 
+    public function receivables(): HasMany
+    {
+        return $this->hasMany(DriverReceivable::class);
+    }
+
     public function getDisplayNameAttribute(): string
     {
         return trim((string) ($this->NAMA ?? $this->name ?? 'Tanpa Nama'));

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Kendaraan extends Model
 {
@@ -23,6 +24,11 @@ class Kendaraan extends Model
     protected $casts = [
         //
     ];
+
+    public function expedisis(): HasMany
+    {
+        return $this->hasMany(Expedisi::class, 'KENDARAAN', 'KODE');
+    }
 
     public function getDisplayNameAttribute(): string
     {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Price as PriceModel;
 use App\Models\PriceCus;
 use App\Models\PriceCushis;
+use App\Models\Mcustomer;
 use Illuminate\Http\Request;
 
 class PriceController extends Controller
@@ -20,7 +21,11 @@ class PriceController extends Controller
         $search = trim((string) $request->input('search'));
         $prices = PriceModel::query()
             ->when($search, function ($query) use ($search) {
-                $query->where('FROM', 'like', "%{$search}%")
+                $query->where('KETERANGAN', 'like', "%{$search}%")
+                    ->orWhere('DARI', 'like', "%{$search}%")
+                    ->orWhere('SAMPAI', 'like', "%{$search}%")
+                    ->orWhere('RUTE', 'like', "%{$search}%")
+                    ->orWhere('FROM', 'like', "%{$search}%")
                     ->orWhere('TO', 'like', "%{$search}%");
             })
             ->orderBy('FROM')
@@ -68,7 +73,29 @@ class PriceController extends Controller
             $validated['TO'] = (string) $request->input('SAMPAI');
         }
 
-        PriceModel::create($validated);
+        // Generate KODE otomatis jika kosong
+        if (empty($validated['KODE'])) {
+            $lastCode = PriceModel::orderBy('id', 'desc')->value('KODE');
+            $number = $lastCode ? (int) substr($lastCode, 3) + 1 : 1;
+            $validated['KODE'] = 'PRC' . str_pad($number, 7, '0', STR_PAD_LEFT);
+        }
+
+        // Set default values
+        $validated['HV'] = $validated['HV'] ?? 0;
+        $validated['HKG'] = $validated['HKG'] ?? 0;
+        $validated['HBOK'] = $validated['HBOK'] ?? 0;
+        $validated['HG'] = $validated['HG'] ?? 0;
+
+        // Generate KUNCI
+        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '') .
+                              ($validated['JENIS'] ?? '') .
+                              ($validated['DARI'] ?? '') .
+                              ($validated['SAMPAI'] ?? '');
+
+        $price = PriceModel::create($validated);
+
+        // Sinkronisasi ke tabel pricecus
+        $this->syncPriceCus($price);
 
         return redirect()->route('price.index')
             ->with('success', 'Price berhasil ditambahkan.');
@@ -106,6 +133,7 @@ class PriceController extends Controller
 
         $validated['USEREDIT'] = $request->user()->name ?? 'system';
 
+        // Map legacy DARI/SAMPAI to FROM/TO if FROM/TO empty
         if (empty($validated['FROM']) && !empty($request->input('DARI'))) {
             $validated['FROM'] = (string) $request->input('DARI');
         }
@@ -113,10 +141,57 @@ class PriceController extends Controller
             $validated['TO'] = (string) $request->input('SAMPAI');
         }
 
+        // Set default values
+        $validated['HV'] = $validated['HV'] ?? 0;
+        $validated['HKG'] = $validated['HKG'] ?? 0;
+        $validated['HBOK'] = $validated['HBOK'] ?? 0;
+        $validated['HG'] = $validated['HG'] ?? 0;
+
+        // Generate KUNCI
+        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '') .
+                              ($validated['JENIS'] ?? '') .
+                              ($validated['DARI'] ?? '') .
+                              ($validated['SAMPAI'] ?? '');
+
         $price->update($validated);
+
+        // Sinkronisasi ke tabel pricecus
+        $this->syncPriceCus($price);
 
         return redirect()->route('price.index')
             ->with('success', 'Price berhasil diperbarui.');
+    }
+
+    /**
+     * Sinkronisasi price ke tabel pricecus untuk semua customer
+     */
+    private function syncPriceCus(PriceModel $price): void
+    {
+        $customers = Mcustomer::select('CUSTOMER')->get();
+        $data = [];
+        foreach ($customers as $customer) {
+            $data[] = [
+                'KODECUS' => $customer->CUSTOMER,
+                'KODE' => $price->id,
+                'TANGGAL' => $price->TANGGAL,
+                'KETERANGAN' => $price->KETERANGAN,
+                'DARI' => $price->DARI,
+                'SAMPAI' => $price->SAMPAI,
+                'RUTE' => $price->RUTE,
+                'HARGA' => $price->HARGA,
+                'HV' => $price->HV,
+                'HKG' => $price->HKG,
+                'HBOK' => $price->HBOK,
+                'USER' => $price->USER,
+                'USEREDIT' => $price->USEREDIT,
+                'KUNCI' => $price->KUNCI,
+                'HG' => $price->HG,
+                'JENIS' => $price->JENIS,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+        PriceCus::insert($data);
     }
 
     public function destroy(PriceModel $price)
