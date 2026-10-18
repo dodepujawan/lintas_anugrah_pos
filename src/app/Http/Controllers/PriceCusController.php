@@ -18,21 +18,46 @@ class PriceCusController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
-        $priceCuses = PriceCus::query()
+        $customers = Mcustomer::query()
             ->when($search, function ($query) use ($search) {
-                $query->where('KODECUS', 'like', "%{$search}%")
-                    ->orWhere('NAMACUS', 'like', "%{$search}%");
+                $query->where('CUSTOMER', 'like', "%{$search}%")
+                    ->orWhere('NAMACUST', 'like', "%{$search}%");
             })
-            ->orderBy('FROM')
+            ->orderBy('CUSTOMER')
             ->paginate(20)
             ->withQueryString();
 
-        return view('price-customer.index', compact('priceCuses', 'search'));
+        return view('price-customer.index', compact('customers', 'search'));
     }
 
-    public function create()
+    /**
+     * Tampilkan daftar price untuk customer tertentu
+     */
+    public function customerPrices($kodecus, Request $request)
     {
-        return view('price-customer.create');
+        $customer = Mcustomer::where('CUSTOMER', $kodecus)->firstOrFail();
+        $search = trim((string) $request->input('search'));
+        $priceCuses = PriceCus::query()
+            ->where('KODECUS', $kodecus)
+            ->when($search, function ($query) use ($search) {
+                $query->where('KETERANGAN', 'like', "%{$search}%")
+                    ->orWhere('DARI', 'like', "%{$search}%")
+                    ->orWhere('SAMPAI', 'like', "%{$search}%")
+                    ->orWhere('RUTE', 'like', "%{$search}%");
+            })
+            ->orderBy('DARI')
+            ->orderBy('SAMPAI')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('price-customer.customer-prices', compact('customer', 'priceCuses', 'search'));
+    }
+
+    public function create(Request $request)
+    {
+        $kodecus = $request->input('kodecus');
+        $customer = $kodecus ? Mcustomer::where('CUSTOMER', $kodecus)->first() : null;
+        return view('price-customer.create', compact('customer'));
     }
 
     public function store(Request $request)
@@ -85,7 +110,7 @@ class PriceCusController extends Controller
 
         PriceCushis::create($validated);
 
-        return redirect()->route('price-customer.index')
+        return redirect()->route('price-customer.customer-prices', $validated['KODECUS'])
             ->with('success', 'Price customer berhasil ditambahkan.');
     }
 
@@ -140,15 +165,16 @@ class PriceCusController extends Controller
 
         $priceCus->update($validated);
 
-        return redirect()->route('price-customer.index')
+        return redirect()->route('price-customer.customer-prices', $priceCus->KODECUS)
             ->with('success', 'Price customer berhasil diperbarui.');
     }
 
     public function destroy(PriceCus $priceCus)
     {
+        $kodecus = $priceCus->KODECUS;
         $priceCus->delete();
 
-        return redirect()->route('price-customer.index')
+        return redirect()->route('price-customer.customer-prices', $kodecus)
             ->with('success', 'Price customer berhasil dihapus.');
     }
 

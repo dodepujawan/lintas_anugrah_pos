@@ -548,7 +548,8 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
         ->parameters(['kendaraan' => 'kendaraan']);
 
     Route::resource('price', PriceController::class);
-    Route::resource('price-customer', PriceCusController::class);
+    Route::resource('price-customer', PriceCusController::class)->except(['show']);
+    Route::get('price-customer/{kodecus}/prices', [PriceCusController::class, 'customerPrices'])->name('price-customer.customer-prices');
     Route::resource('price-rent', PricedinginController::class);
     Route::resource('price-rent-customer', PricedingincusController::class);
 

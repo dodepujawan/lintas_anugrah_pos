@@ -33,11 +33,11 @@
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label">Kode Customer <span class="text-danger">*</span></label>
-                        <input type="text" name="KODECUS" data-debug="transaksiPriceCustomerCreate_KODECUS" class="form-control form-control-sm" required>
+                        <input type="text" name="KODECUS" data-debug="transaksiPriceCustomerCreate_KODECUS" class="form-control form-control-sm" value="{{ $customer->CUSTOMER ?? '' }}" {{ $customer ? 'readonly' : 'required' }}>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Nama Customer</label>
-                        <input type="text" name="NAMACUS" data-debug="transaksiPriceCustomerCreate_NAMACUS" class="form-control form-control-sm">
+                        <input type="text" name="NAMACUS" data-debug="transaksiPriceCustomerCreate_NAMACUS" class="form-control form-control-sm" value="{{ $customer->NAMACUST ?? '' }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">TANGGAL</label>
