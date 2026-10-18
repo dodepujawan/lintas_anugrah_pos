@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\Mcustomer;
+use App\Models\Price;
 use App\Models\PriceCus;
 use App\Models\PriceCushis;
-use App\Models\Mcustomer;
 use Illuminate\Http\Request;
 
 class PriceCusController extends Controller
@@ -53,10 +53,90 @@ class PriceCusController extends Controller
         return view('price-customer.customer-prices', compact('customer', 'priceCuses', 'search'));
     }
 
+    /**
+     * Sync new prices from the general price table into pricecus for a customer.
+     */
+    public function updateAll(Request $request, $kodecus)
+    {
+        $existingKode = PriceCus::where('KODECUS', $kodecus)
+            ->pluck('KODE')
+            ->toArray();
+
+        $newPrices = Price::whereNotIn('id', $existingKode)->get();
+
+        if ($newPrices->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Tidak ada harga baru',
+            ]);
+        }
+
+        $insertData = [];
+
+        foreach ($newPrices as $price) {
+            $insertData[] = [
+                'KODECUS' => $kodecus,
+                'KODE' => $price->id,
+                'TANGGAL' => $price->TANGGAL,
+                'KETERANGAN' => $price->KETERANGAN,
+                'DARI' => $price->DARI,
+                'SAMPAI' => $price->SAMPAI,
+                'RUTE' => $price->RUTE,
+                'HARGA' => $price->HARGA,
+                'HV' => $price->HV,
+                'HKG' => $price->HKG,
+                'HBOK' => $price->HBOK,
+                'USER' => $price->USER,
+                'USEREDIT' => $price->USEREDIT,
+                'KUNCI' => $price->KUNCI,
+                'HG' => $price->HG,
+                'JENIS' => $price->JENIS,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        PriceCus::insert($insertData);
+
+        return response()->json([
+            'success' => true,
+            'message' => count($insertData).' harga baru berhasil ditambahkan',
+        ]);
+    }
+
+    /**
+     * Save a single price row (inline edit).
+     */
+    public function saveRow(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:pricecus,id',
+            'harga' => 'required|numeric',
+        ]);
+
+        $updated = PriceCus::where('id', $request->id)->update([
+            'HARGA' => $request->harga,
+            'USEREDIT' => $request->user()->name ?? 'System',
+        ]);
+
+        if (! $updated) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data harga customer tidak ditemukan',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Harga berhasil diupdate',
+        ]);
+    }
+
     public function create(Request $request)
     {
         $kodecus = $request->input('kodecus');
         $customer = $kodecus ? Mcustomer::where('CUSTOMER', $kodecus)->first() : null;
+
         return view('price-customer.create', compact('customer'));
     }
 
@@ -87,10 +167,10 @@ class PriceCusController extends Controller
         $validated['USEREDIT'] = $user;
 
         // Map legacy DARI/SAMPAI to FROM/TO if FROM/TO empty
-        if (empty($validated['FROM']) && !empty($request->input('DARI'))) {
+        if (empty($validated['FROM']) && ! empty($request->input('DARI'))) {
             $validated['FROM'] = (string) $request->input('DARI');
         }
-        if (empty($validated['TO']) && !empty($request->input('SAMPAI'))) {
+        if (empty($validated['TO']) && ! empty($request->input('SAMPAI'))) {
             $validated['TO'] = (string) $request->input('SAMPAI');
         }
 
@@ -101,9 +181,9 @@ class PriceCusController extends Controller
         $validated['HG'] = $validated['HG'] ?? 0;
 
         // Generate KUNCI
-        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '') .
-                              ($validated['JENIS'] ?? '') .
-                              ($validated['DARI'] ?? '') .
+        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '').
+                              ($validated['JENIS'] ?? '').
+                              ($validated['DARI'] ?? '').
                               ($validated['SAMPAI'] ?? '');
 
         PriceCus::create($validated);
@@ -144,10 +224,10 @@ class PriceCusController extends Controller
         $validated['USEREDIT'] = $request->user()->name ?? 'system';
 
         // Map legacy DARI/SAMPAI to FROM/TO if FROM/TO empty
-        if (empty($validated['FROM']) && !empty($request->input('DARI'))) {
+        if (empty($validated['FROM']) && ! empty($request->input('DARI'))) {
             $validated['FROM'] = (string) $request->input('DARI');
         }
-        if (empty($validated['TO']) && !empty($request->input('SAMPAI'))) {
+        if (empty($validated['TO']) && ! empty($request->input('SAMPAI'))) {
             $validated['TO'] = (string) $request->input('SAMPAI');
         }
 
@@ -158,9 +238,9 @@ class PriceCusController extends Controller
         $validated['HG'] = $validated['HG'] ?? 0;
 
         // Generate KUNCI
-        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '') .
-                              ($validated['JENIS'] ?? '') .
-                              ($validated['DARI'] ?? '') .
+        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '').
+                              ($validated['JENIS'] ?? '').
+                              ($validated['DARI'] ?? '').
                               ($validated['SAMPAI'] ?? '');
 
         $priceCus->update($validated);

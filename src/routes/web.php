@@ -1,61 +1,61 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SettingsController;
-
-use App\Http\Controllers\CoaController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\CoaSaldoNormalAuditController;
-use App\Http\Controllers\JurnalController;
-use App\Http\Controllers\LaporanController;
-
-use App\Http\Controllers\PiutangController;
-use App\Http\Controllers\PelunasanPiutangController;
-use App\Http\Controllers\HutangController;
-use App\Http\Controllers\PelunasanHutangController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\PanduanController;
-use App\Http\Controllers\PeriodLockController;
+use App\Http\Controllers\AccountMappingController;
+use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuditLogController;
-use App\Http\Controllers\ValidationDashboardController;
-use App\Http\Controllers\ImportDataController;
-use App\Http\Controllers\LaporanPiutangController;
-use App\Http\Controllers\LaporanPenjualanController;
-use App\Http\Controllers\PiutangBerjalanController;
-use App\Http\Controllers\LaporanHutangController;
-use App\Http\Controllers\PenjualanHostingController;
-use App\Http\Controllers\DriverController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\DriverReceivableController;
-use App\Http\Controllers\DriverPaymentController;
-use App\Http\Controllers\DriverOpeningReceivableController;
-use App\Http\Controllers\DriverReceivableReportController;
 use App\Http\Controllers\AuditSelisihController;
-
+use App\Http\Controllers\BackupController;
+use App\Http\Controllers\CoaController;
+use App\Http\Controllers\CoaSaldoNormalAuditController;
+use App\Http\Controllers\CoolroomController;
+use App\Http\Controllers\CoolroomGenerateInvoiceController;
+use App\Http\Controllers\CoolroomKwitansiController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DriverController;
+use App\Http\Controllers\DriverOpeningReceivableController;
+use App\Http\Controllers\DriverPaymentController;
+use App\Http\Controllers\DriverReceivableController;
+use App\Http\Controllers\DriverReceivableReportController;
+use App\Http\Controllers\ExpedisiController;
+use App\Http\Controllers\ExpedisiGenerateInvoiceController;
+use App\Http\Controllers\ExpedisiInvoiceController;
+use App\Http\Controllers\ExpedisiKwitansiController;
+use App\Http\Controllers\HutangController;
+use App\Http\Controllers\ImportDataController;
+use App\Http\Controllers\JurnalController;
+use App\Http\Controllers\JurnalPenyesuaianController;
 use App\Http\Controllers\KendaraanController;
+use App\Http\Controllers\KwitansiHistoryController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\LaporanHutangController;
+use App\Http\Controllers\LaporanPenjualanController;
+use App\Http\Controllers\LaporanPiutangController;
+use App\Http\Controllers\PajakController;
+use App\Http\Controllers\PanduanController;
+use App\Http\Controllers\PelunasanHutangController;
+use App\Http\Controllers\PelunasanPiutangController;
+use App\Http\Controllers\PenjualanHostingController;
+use App\Http\Controllers\PeriodLockController;
+use App\Http\Controllers\PiutangBerjalanController;
+use App\Http\Controllers\PiutangController;
 use App\Http\Controllers\PriceController;
 use App\Http\Controllers\PriceCusController;
 use App\Http\Controllers\PricedinginController;
 use App\Http\Controllers\PricedingincusController;
-use App\Http\Controllers\ExpedisiController;
-use App\Http\Controllers\ExpedisiInvoiceController;
-use App\Http\Controllers\ExpedisiGenerateInvoiceController;
-use App\Http\Controllers\ExpedisiKwitansiController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RekeningController;
 use App\Http\Controllers\RentPendinginController;
 use App\Http\Controllers\RentPendinginGenerateInvoiceController;
 use App\Http\Controllers\RentPendinginKwitansiController;
-use App\Http\Controllers\CoolroomController;
-use App\Http\Controllers\CoolroomGenerateInvoiceController;
-use App\Http\Controllers\CoolroomKwitansiController;
-use App\Http\Controllers\KwitansiHistoryController;
+use App\Http\Controllers\SaldoAwalController;
 use App\Http\Controllers\ServiceController;
-use App\Http\Controllers\PajakController;
-use App\Http\Controllers\RekeningController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SignatureController;
-use App\Http\Controllers\AreaController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ValidationDashboardController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -130,9 +130,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
     // Backup
-    Route::get('backup', [App\Http\Controllers\BackupController::class, 'index'])->name('backup');
-    Route::post('backup/run', [App\Http\Controllers\BackupController::class, 'run'])->name('backup.run');
-    Route::get('backup/download/{file}', [App\Http\Controllers\BackupController::class, 'download'])->name('backup.download');
+    Route::get('backup', [BackupController::class, 'index'])->name('backup');
+    Route::post('backup/run', [BackupController::class, 'run'])->name('backup.run');
+    Route::get('backup/download/{file}', [BackupController::class, 'download'])->name('backup.download');
 
     /*
     |--------------------------------------------------------------------------
@@ -147,9 +147,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | ACCOUNT MAPPING
     |--------------------------------------------------------------------------
     */
-    Route::get('account-mappings', [App\Http\Controllers\AccountMappingController::class, 'index'])
+    Route::get('account-mappings', [AccountMappingController::class, 'index'])
         ->name('account-mappings.index');
-    Route::post('account-mappings', [App\Http\Controllers\AccountMappingController::class, 'store'])
+    Route::post('account-mappings', [AccountMappingController::class, 'store'])
         ->name('account-mappings.store');
 
     Route::get('coa-saldo-normal', [CoaSaldoNormalAuditController::class, 'index'])
@@ -176,24 +176,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | SALDO AWAL AKUN
     |--------------------------------------------------------------------------
     */
-    Route::post('saldo-awal/draft/save', [App\Http\Controllers\SaldoAwalController::class, 'saveDraft'])->name('saldo-awal.draft.save');
-    Route::get('saldo-awal/export', [App\Http\Controllers\SaldoAwalController::class, 'export'])->name('saldo-awal.export');
-    Route::get('saldo-awal/pdf', [App\Http\Controllers\SaldoAwalController::class, 'pdf'])->name('saldo-awal.pdf');
-    Route::get('saldo-awal/{saldo_awal}/pdf', [App\Http\Controllers\SaldoAwalController::class, 'pdfDetail'])->name('saldo-awal.detail.pdf');
-    Route::resource('saldo-awal', App\Http\Controllers\SaldoAwalController::class);
-    Route::post('saldo-awal/{saldo_awal}/post', [App\Http\Controllers\SaldoAwalController::class, 'post'])->name('saldo-awal.post');
-    Route::post('saldo-awal/{saldo_awal}/reopen', [App\Http\Controllers\SaldoAwalController::class, 'reopen'])->name('saldo-awal.reopen');
+    Route::post('saldo-awal/draft/save', [SaldoAwalController::class, 'saveDraft'])->name('saldo-awal.draft.save');
+    Route::get('saldo-awal/export', [SaldoAwalController::class, 'export'])->name('saldo-awal.export');
+    Route::get('saldo-awal/pdf', [SaldoAwalController::class, 'pdf'])->name('saldo-awal.pdf');
+    Route::get('saldo-awal/{saldo_awal}/pdf', [SaldoAwalController::class, 'pdfDetail'])->name('saldo-awal.detail.pdf');
+    Route::resource('saldo-awal', SaldoAwalController::class);
+    Route::post('saldo-awal/{saldo_awal}/post', [SaldoAwalController::class, 'post'])->name('saldo-awal.post');
+    Route::post('saldo-awal/{saldo_awal}/reopen', [SaldoAwalController::class, 'reopen'])->name('saldo-awal.reopen');
 
     /*
     |--------------------------------------------------------------------------
     | JURNAL PENYESUAIAN
     |--------------------------------------------------------------------------
     */
-    Route::post('jurnal-penyesuaian/draft/save', [App\Http\Controllers\JurnalPenyesuaianController::class, 'saveDraft'])->name('jurnal-penyesuaian.draft.save');
-    Route::get('jurnal-penyesuaian/export', [App\Http\Controllers\JurnalPenyesuaianController::class, 'export'])->name('jurnal-penyesuaian.export');
-    Route::get('jurnal-penyesuaian/pdf', [App\Http\Controllers\JurnalPenyesuaianController::class, 'pdf'])->name('jurnal-penyesuaian.pdf');
-    Route::resource('jurnal-penyesuaian', App\Http\Controllers\JurnalPenyesuaianController::class);
-    Route::post('jurnal-penyesuaian/{jurnal_penyesuaian}/post', [App\Http\Controllers\JurnalPenyesuaianController::class, 'post'])->name('jurnal-penyesuaian.post');
+    Route::post('jurnal-penyesuaian/draft/save', [JurnalPenyesuaianController::class, 'saveDraft'])->name('jurnal-penyesuaian.draft.save');
+    Route::get('jurnal-penyesuaian/export', [JurnalPenyesuaianController::class, 'export'])->name('jurnal-penyesuaian.export');
+    Route::get('jurnal-penyesuaian/pdf', [JurnalPenyesuaianController::class, 'pdf'])->name('jurnal-penyesuaian.pdf');
+    Route::resource('jurnal-penyesuaian', JurnalPenyesuaianController::class);
+    Route::post('jurnal-penyesuaian/{jurnal_penyesuaian}/post', [JurnalPenyesuaianController::class, 'post'])->name('jurnal-penyesuaian.post');
 
     /*
     |--------------------------------------------------------------------------
@@ -267,7 +267,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'store',
         'show',
         'edit',
-        'update'
+        'update',
     ]);
 
     /*
@@ -530,7 +530,7 @@ Route::middleware('auth')->group(function () {
     )->name('profile.destroy');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -550,6 +550,8 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     Route::resource('price', PriceController::class);
     Route::resource('price-customer', PriceCusController::class)->except(['show']);
     Route::get('price-customer/{kodecus}/prices', [PriceCusController::class, 'customerPrices'])->name('price-customer.customer-prices');
+    Route::post('price-customer/{kodecus}/update-all', [PriceCusController::class, 'updateAll'])->name('price-customer.update-all');
+    Route::post('price-customer/update-row', [PriceCusController::class, 'saveRow'])->name('price-customer.update-row');
     Route::resource('price-rent', PricedinginController::class);
     Route::resource('price-rent-customer', PricedingincusController::class);
 
@@ -713,4 +715,3 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     Route::delete('area/{area}', [AreaController::class, 'destroy'])
         ->name('area.destroy');
 });
-

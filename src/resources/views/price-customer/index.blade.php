@@ -33,6 +33,7 @@
                         <th>Nama Customer</th>
                         <th>Jenis Usaha</th>
                         <th>Telepon</th>
+                        <th>Email</th>
                         <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -44,6 +45,7 @@
                         <td>{{ $c->NAMACUST ?? '-' }}</td>
                         <td>{{ $c->TYPECUST ?? '-' }}</td>
                         <td>{{ $c->TELEPON ?? '-' }}</td>
+                        <td>{{ $c->EMAIL ?? '-' }}</td>
                         <td class="text-center">
                             <a href="{{ route('price-customer.customer-prices', $c->CUSTOMER) }}" id="btnViewPriceCus_{{ $c->CUSTOMER }}" data-debug="transaksiPriceCustomerView_{{ $c->CUSTOMER }}" class="btn btn-sm btn-outline-primary" title="Lihat Price">
                                 <i class="bi bi-eye"></i>
@@ -51,7 +53,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="text-center py-4 text-muted">
+                    <tr><td colspan="7" class="text-center py-4 text-muted">
                         <i class="bi bi-inbox display-4"></i>
                         <p class="mt-2">Tidak ada data customer.</p>
                     </td></tr>
