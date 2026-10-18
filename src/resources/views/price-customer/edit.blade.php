@@ -36,10 +36,6 @@
                         <input type="text" name="KODECUS" data-debug="transaksiPriceCustomerEdit_KODECUS" class="form-control form-control-sm" value="{{ $priceCus->KODECUS }}" required>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">KODE</label>
-                        <input type="text" name="KODE" data-debug="transaksiPriceCustomerEdit_KODE" class="form-control form-control-sm" value="{{ $priceCus->KODE }}">
-                    </div>
-                    <div class="col-md-3">
                         <label class="form-label">Nama Customer</label>
                         <input type="text" name="NAMACUS" data-debug="transaksiPriceCustomerEdit_NAMACUS" class="form-control form-control-sm" value="{{ $priceCus->NAMACUS }}">
                     </div>
@@ -48,56 +44,42 @@
                         <input type="date" name="TANGGAL" data-debug="transaksiPriceCustomerEdit_TANGGAL" class="form-control form-control-sm" value="{{ $priceCus->TANGGAL?->format('Y-m-d') }}">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">FROM</label>
-                        <input type="text" name="FROM" data-debug="transaksiPriceCustomerEdit_FROM" class="form-control form-control-sm" value="{{ $priceCus->FROM }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">TO</label>
-                        <input type="text" name="TO" data-debug="transaksiPriceCustomerEdit_TO" class="form-control form-control-sm" value="{{ $priceCus->TO }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">DARI</label>
-                        <input type="number" name="DARI" data-debug="transaksiPriceCustomerEdit_DARI" class="form-control form-control-sm" value="{{ $priceCus->DARI }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">SAMPAI</label>
-                        <input type="number" name="SAMPAI" data-debug="transaksiPriceCustomerEdit_SAMPAI" class="form-control form-control-sm" value="{{ $priceCus->SAMPAI }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">RUTE</label>
-                        <input type="text" name="RUTE" data-debug="transaksiPriceCustomerEdit_RUTE" class="form-control form-control-sm" value="{{ $priceCus->RUTE }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">HARGA</label>
-                        <input type="number" name="HARGA" data-debug="transaksiPriceCustomerEdit_HARGA" class="form-control form-control-sm" value="{{ $priceCus->HARGA }}">
+                        <label class="form-label">Nama Item</label>
+                        <input type="text" name="KETERANGAN" data-debug="transaksiPriceCustomerEdit_KETERANGAN" class="form-control form-control-sm" value="{{ $priceCus->KETERANGAN }}" placeholder="Contoh: EC > 40 KG">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">KETERANGAN</label>
-                        <input type="text" name="KETERANGAN" data-debug="transaksiPriceCustomerEdit_KETERANGAN" class="form-control form-control-sm" value="{{ $priceCus->KETERANGAN }}">
+                        <label class="form-label">DARI (Kg)</label>
+                        <input type="number" name="DARI" data-debug="transaksiPriceCustomerEdit_DARI" class="form-control form-control-sm" value="{{ $priceCus->DARI }}" placeholder="0">
                     </div>
-                    <div class="col-md-1">
-                        <label class="form-label">HV</label>
-                        <input type="number" name="HV" data-debug="transaksiPriceCustomerEdit_HV" class="form-control form-control-sm" value="{{ $priceCus->HV }}">
+                    <div class="col-md-2">
+                        <label class="form-label">SAMPAI (Kg)</label>
+                        <input type="number" name="SAMPAI" data-debug="transaksiPriceCustomerEdit_SAMPAI" class="form-control form-control-sm" value="{{ $priceCus->SAMPAI }}" placeholder="0">
                     </div>
-                    <div class="col-md-1">
-                        <label class="form-label">HKG</label>
-                        <input type="number" name="HKG" data-debug="transaksiPriceCustomerEdit_HKG" class="form-control form-control-sm" value="{{ $priceCus->HKG }}">
+                    <div class="col-md-2">
+                        <label class="form-label">RUTE</label>
+                        <input type="text" name="RUTE" data-debug="transaksiPriceCustomerEdit_RUTE" class="form-control form-control-sm" value="{{ $priceCus->RUTE }}" placeholder="Contoh: DIY - DPS">
                     </div>
-                    <div class="col-md-1">
-                        <label class="form-label">HBOK</label>
-                        <input type="number" name="HBOK" data-debug="transaksiPriceCustomerEdit_HBOK" class="form-control form-control-sm" value="{{ $priceCus->HBOK }}">
+                    <div class="col-md-2">
+                        <label class="form-label">HARGA</label>
+                        <input type="number" name="HARGA" data-debug="transaksiPriceCustomerEdit_HARGA" class="form-control form-control-sm" value="{{ $priceCus->HARGA }}" placeholder="0">
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">KUNCI</label>
-                        <input type="text" name="KUNCI" data-debug="transaksiPriceCustomerEdit_KUNCI" class="form-control form-control-sm" value="{{ $priceCus->KUNCI }}">
-                    </div>
-                    <div class="col-md-1">
-                        <label class="form-label">HG</label>
-                        <input type="number" name="HG" data-debug="transaksiPriceCustomerEdit_HG" class="form-control form-control-sm" value="{{ $priceCus->HG }}">
-                    </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <label class="form-label">JENIS</label>
-                        <input type="text" name="JENIS" data-debug="transaksiPriceCustomerEdit_JENIS" class="form-control form-control-sm" maxlength="1" value="{{ $priceCus->JENIS }}">
+                        <div class="d-flex gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="JENIS" value="1" id="jenisEceran" {{ $priceCus->JENIS == 1 ? 'checked' : '' }}>
+                                <label class="form-check-label" for="jenisEceran">Eceran</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="JENIS" value="2" id="jenisBoking" {{ $priceCus->JENIS == 2 ? 'checked' : '' }}>
+                                <label class="form-check-label" for="jenisBoking">Boking</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
                     </div>
                 </div>
             </div>

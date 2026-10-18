@@ -32,12 +32,12 @@
                         <th>KODECUS</th>
                         <th>KODE</th>
                         <th>NAMACUS</th>
-                        <th>FROM</th>
-                        <th>TO</th>
+                        <th>DARI</th>
+                        <th>SAMPAI</th>
                         <th>RUTE</th>
                         <th class="text-end">HARGA</th>
-                        <th>Tanggal</th>
-                        <th class="text-end">Aksi</th>
+                        <th>JENIS</th>
+                        <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,17 +47,28 @@
                         <td class="font-monospace">{{ $p->KODECUS }}</td>
                         <td>{{ $p->KODE ?? '-' }}</td>
                         <td>{{ $p->NAMACUS ?? '-' }}</td>
-                        <td>{{ $p->FROM ?? '-' }}</td>
-                        <td>{{ $p->TO ?? '-' }}</td>
+                        <td>{{ $p->DARI ?? '-' }}</td>
+                        <td>{{ $p->SAMPAI ?? '-' }}</td>
                         <td>{{ $p->RUTE ?? '-' }}</td>
                         <td class="text-end">{{ number_format((float) $p->HARGA, 0, ',', '.') }}</td>
-                        <td>{{ $p->TANGGAL?->format('d/m/Y') ?? '-' }}</td>
-                        <td class="text-end">
-                            <a href="{{ route('price-customer.edit', $p) }}" id="btnEditPriceCus_{{ $p->id }}" data-debug="transaksiPriceCustomerEditBtn_{{ $p->id }}" class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil"></i> Edit</a>
+                        <td>{{ $p->JENIS == 1 ? 'Eceran' : ($p->JENIS == 2 ? 'Boking' : '-') }}</td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{{ route('price-customer.edit', $p) }}" id="btnEditPriceCus_{{ $p->id }}" data-debug="transaksiPriceCustomerEditBtn_{{ $p->id }}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form class="d-inline" method="POST" action="{{ route('price-customer.destroy', $p) }}" onsubmit="return confirm('Hapus price customer {{ $p->KODECUS }}?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="11" class="text-center py-4 text-muted">
+                    <tr><td colspan="10" class="text-center py-4 text-muted">
                         <i class="bi bi-inbox display-4"></i>
                         <p class="mt-2">Tidak ada data.</p>
                     </td></tr>

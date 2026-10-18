@@ -61,12 +61,25 @@ class PriceCusController extends Controller
         $validated['USER'] = $user;
         $validated['USEREDIT'] = $user;
 
+        // Map legacy DARI/SAMPAI to FROM/TO if FROM/TO empty
         if (empty($validated['FROM']) && !empty($request->input('DARI'))) {
             $validated['FROM'] = (string) $request->input('DARI');
         }
         if (empty($validated['TO']) && !empty($request->input('SAMPAI'))) {
             $validated['TO'] = (string) $request->input('SAMPAI');
         }
+
+        // Set default values
+        $validated['HV'] = $validated['HV'] ?? 0;
+        $validated['HKG'] = $validated['HKG'] ?? 0;
+        $validated['HBOK'] = $validated['HBOK'] ?? 0;
+        $validated['HG'] = $validated['HG'] ?? 0;
+
+        // Generate KUNCI
+        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '') .
+                              ($validated['JENIS'] ?? '') .
+                              ($validated['DARI'] ?? '') .
+                              ($validated['SAMPAI'] ?? '');
 
         PriceCus::create($validated);
 
@@ -105,12 +118,25 @@ class PriceCusController extends Controller
 
         $validated['USEREDIT'] = $request->user()->name ?? 'system';
 
+        // Map legacy DARI/SAMPAI to FROM/TO if FROM/TO empty
         if (empty($validated['FROM']) && !empty($request->input('DARI'))) {
             $validated['FROM'] = (string) $request->input('DARI');
         }
         if (empty($validated['TO']) && !empty($request->input('SAMPAI'))) {
             $validated['TO'] = (string) $request->input('SAMPAI');
         }
+
+        // Set default values
+        $validated['HV'] = $validated['HV'] ?? 0;
+        $validated['HKG'] = $validated['HKG'] ?? 0;
+        $validated['HBOK'] = $validated['HBOK'] ?? 0;
+        $validated['HG'] = $validated['HG'] ?? 0;
+
+        // Generate KUNCI
+        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '') .
+                              ($validated['JENIS'] ?? '') .
+                              ($validated['DARI'] ?? '') .
+                              ($validated['SAMPAI'] ?? '');
 
         $priceCus->update($validated);
 
