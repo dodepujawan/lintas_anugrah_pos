@@ -20,6 +20,6 @@ class PriceCus extends Model
     ];
 
     protected $casts = [
-        'TANGGAL' => 'date',
+        // 'TANGGAL' => 'date',
     ];
 }

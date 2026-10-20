@@ -17,8 +17,4 @@ class Price extends Model
         'HV', 'HKG', 'HBOK', 'KUNCI', 'HG', 'JENIS',
         'USER', 'USEREDIT',
     ];
-
-    protected $casts = [
-        'TANGGAL' => 'date',
-    ];
 }

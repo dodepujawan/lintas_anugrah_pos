@@ -7,9 +7,33 @@ Baca dulu SEBELUM mulai:
 
 ## Konteks saat ini
 - Migrasi transaksi src_old → src sudah sebagian selesai, tapi banyak issue schema mismatch temuan pertama kali baru ketahuan pas import data
-- Environment: Docker + MySQL 8 (host 192.168.1.7:3306, db `lintas_anugrah_full`). Sandbox hanya pakai SQLite testing.
+- Environment: Docker + MySQL 8. Host/database harus diverifikasi dari `.env`; error runtime terakhir menunjuk ke `192.168.1.10:3306`, database `lintas_anugrah_full`, sedangkan catatan lama menunjuk ke `192.168.1.7`.
 - Test: `php artisan test --filter=Transaksi` (13/13 passed) — jalankan setelah setiap perubahan
 - Route cache: `php artisan route:cache`
+
+## Source Of Truth: Price Customer (status 2026-10-20)
+- Modul lama: `src_old/resources/views/priceCustomer/priceCustomer.blade.php` + `src_old/app/Http/Controllers/PricesCustomerController.php`.
+- Modul aktif: `src/resources/views/price-customer/index.blade.php` (daftar customer), `customer-prices.blade.php` (detail harga), `create.blade.php`, `edit.blade.php`.
+- Controller aktif: `src/app/Http/Controllers/PriceCusController.php`.
+- Route aktif:
+  - `price-customer.index`: daftar customer.
+  - `price-customer.customer-prices`: detail berdasarkan `{kodecus}`.
+  - `price-customer.update-all`: sinkronisasi harga master ke customer.
+  - `price-customer.update-row`: simpan harga inline.
+  - resource routes memakai `->parameters(['price-customer' => 'priceCus'])` agar implicit model binding `PriceCus $priceCus` konsisten.
+- Fitur yang sudah ekuivalen dengan `src_old`: info customer, tabel detail, HARGA editable, simpan harga per baris, Update All Harga Customer, pencarian, pagination, pengecekan delete terhadap `expedisis`.
+- Perbedaan yang disengaja: `src` memakai Bootstrap 5 + Alpine.js + Fetch/full reload, bukan jQuery/DataTables/SweetAlert2. Daftar customer dan detail berada di halaman berbeda, bukan toggle satu halaman.
+- Fitur yang belum ekuivalen penuh: modal pilih/tambah rute lama. Form `src` saat ini menggunakan input RUTE biasa; tombol tambah harga lama pada source lama juga `hidden disabled` dan endpoint store lamanya diberi catatan tidak dipakai.
+- Konvensi KODE: data legacy dapat menyimpan `pricecus.KODE = prices.id` atau `prices.KODE`. `Update All` wajib membandingkan keduanya agar tidak membuat duplikasi. Data baru diarahkan memakai `prices.KODE`.
+- Performa detail: `customerPrices()` memakai `simplePaginate(20)` dan urutan `DARI`, `SAMPAI`, `id`. Migration `2026_10_20_000001_add_price_customer_query_indexes.php` menambah index aman `pricecus_kodecus_dari_sampai_id_index` hanya jika belum ada.
+- TANGGAL: model `Price` tidak lagi memakai cast `date` karena schema runtime legacy menerima `VARCHAR(10)`. Controller menormalisasi ke `Y-m-d` agar tidak terkirim sebagai `Y-m-d H:i:s`.
+
+## Protokol Lanjut Price Customer
+1. Baca bagian source of truth ini dan changelog paling bawah `docs/progress_migrasi.md`.
+2. Verifikasi schema/runtime di MySQL server dengan `php artisan migrate:status`, `SHOW COLUMNS`, dan `SHOW INDEX`; sandbox SQLite bukan sumber kebenaran schema produksi.
+3. Jangan mengedit migration yang sudah recorded. Migration index baru harus memakai `Schema::hasTable()` dan `Schema::hasIndex()`.
+4. Setelah perubahan, jalankan `php artisan test --filter=Transaksi`, lint terkait, dan catat hasilnya di `docs/progress_migrasi.md`.
+5. Jika melanjutkan fitur lama, prioritaskan modal/pengelolaan RUTE; jangan mengembalikan Yajra DataTables atau jQuery.
 
 ## ⚠️ WARNING: Step-by-step, satu modul per satu modul
 CONTOH: ada 3 modul Ekspedisi, Rent Pendingin, Coolroom → kerjakan Eksedisi dulu sampai DONE, setelah itu programmer cek di browser, baru lanjut ke Rent Pendingin, lalu Coolroom. Jangan lompat ke semua modul sekaligus.

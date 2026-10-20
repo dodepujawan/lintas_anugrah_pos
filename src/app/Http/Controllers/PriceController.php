@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\Mcustomer;
 use App\Models\Price as PriceModel;
 use App\Models\PriceCus;
-use App\Models\PriceCushis;
-use App\Models\Mcustomer;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class PriceController extends Controller
@@ -64,12 +63,13 @@ class PriceController extends Controller
         $user = $request->user()->name ?? 'system';
         $validated['USER'] = $user;
         $validated['USEREDIT'] = $user;
+        $validated['TANGGAL'] = $this->normalizeTanggal($validated['TANGGAL'] ?? null);
 
         // Map legacy DARI/SAMPAI to FROM/TO if FROM/TO empty
-        if (empty($validated['FROM']) && !empty($request->input('DARI'))) {
+        if (empty($validated['FROM']) && ! empty($request->input('DARI'))) {
             $validated['FROM'] = (string) $request->input('DARI');
         }
-        if (empty($validated['TO']) && !empty($request->input('SAMPAI'))) {
+        if (empty($validated['TO']) && ! empty($request->input('SAMPAI'))) {
             $validated['TO'] = (string) $request->input('SAMPAI');
         }
 
@@ -77,7 +77,7 @@ class PriceController extends Controller
         if (empty($validated['KODE'])) {
             $lastCode = PriceModel::orderBy('id', 'desc')->value('KODE');
             $number = $lastCode ? (int) substr($lastCode, 3) + 1 : 1;
-            $validated['KODE'] = 'PRC' . str_pad($number, 7, '0', STR_PAD_LEFT);
+            $validated['KODE'] = 'PRC'.str_pad($number, 7, '0', STR_PAD_LEFT);
         }
 
         // Set default values
@@ -87,9 +87,9 @@ class PriceController extends Controller
         $validated['HG'] = $validated['HG'] ?? 0;
 
         // Generate KUNCI
-        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '') .
-                              ($validated['JENIS'] ?? '') .
-                              ($validated['DARI'] ?? '') .
+        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '').
+                              ($validated['JENIS'] ?? '').
+                              ($validated['DARI'] ?? '').
                               ($validated['SAMPAI'] ?? '');
 
         $price = PriceModel::create($validated);
@@ -114,7 +114,7 @@ class PriceController extends Controller
     public function update(Request $request, PriceModel $price)
     {
         $validated = $request->validate([
-            'KODE' => 'nullable|string|max:20|unique:prices,KODE,' . $price->id,
+            'KODE' => 'nullable|string|max:20|unique:prices,KODE,'.$price->id,
             'FROM' => 'nullable|string|max:30',
             'TO' => 'nullable|string|max:30',
             'HARGA' => 'nullable|numeric',
@@ -132,12 +132,13 @@ class PriceController extends Controller
         ]);
 
         $validated['USEREDIT'] = $request->user()->name ?? 'system';
+        $validated['TANGGAL'] = $this->normalizeTanggal($validated['TANGGAL'] ?? null);
 
         // Map legacy DARI/SAMPAI to FROM/TO if FROM/TO empty
-        if (empty($validated['FROM']) && !empty($request->input('DARI'))) {
+        if (empty($validated['FROM']) && ! empty($request->input('DARI'))) {
             $validated['FROM'] = (string) $request->input('DARI');
         }
-        if (empty($validated['TO']) && !empty($request->input('SAMPAI'))) {
+        if (empty($validated['TO']) && ! empty($request->input('SAMPAI'))) {
             $validated['TO'] = (string) $request->input('SAMPAI');
         }
 
@@ -148,9 +149,9 @@ class PriceController extends Controller
         $validated['HG'] = $validated['HG'] ?? 0;
 
         // Generate KUNCI
-        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '') .
-                              ($validated['JENIS'] ?? '') .
-                              ($validated['DARI'] ?? '') .
+        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '').
+                              ($validated['JENIS'] ?? '').
+                              ($validated['DARI'] ?? '').
                               ($validated['SAMPAI'] ?? '');
 
         $price->update($validated);
@@ -172,7 +173,8 @@ class PriceController extends Controller
         foreach ($customers as $customer) {
             $data[] = [
                 'KODECUS' => $customer->CUSTOMER,
-                'KODE' => $price->id,
+                // Keep the customer copy linked to the master business key.
+                'KODE' => $price->KODE,
                 'TANGGAL' => $price->TANGGAL,
                 'KETERANGAN' => $price->KETERANGAN,
                 'DARI' => $price->DARI,
@@ -192,6 +194,11 @@ class PriceController extends Controller
             ];
         }
         PriceCus::insert($data);
+    }
+
+    private function normalizeTanggal(?string $tanggal): ?string
+    {
+        return $tanggal ? Carbon::parse($tanggal)->format('Y-m-d') : null;
     }
 
     public function destroy(PriceModel $price)

@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Mcustomer;
 use App\Models\Price;
 use App\Models\PriceCus;
-use App\Models\PriceCushis;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PriceCusController extends Controller
 {
@@ -47,7 +47,8 @@ class PriceCusController extends Controller
             })
             ->orderBy('DARI')
             ->orderBy('SAMPAI')
-            ->paginate(20)
+            ->orderBy('id')
+            ->simplePaginate(20)
             ->withQueryString();
 
         return view('price-customer.customer-prices', compact('customer', 'priceCuses', 'search'));
@@ -58,11 +59,22 @@ class PriceCusController extends Controller
      */
     public function updateAll(Request $request, $kodecus)
     {
-        $existingKode = PriceCus::where('KODECUS', $kodecus)
+        // Legacy rows may store either prices.id or prices.KODE in pricecus.KODE.
+        // Check both values so Update All does not create duplicate rows.
+        $existingKeys = PriceCus::where('KODECUS', $kodecus)
             ->pluck('KODE')
-            ->toArray();
+            ->filter(fn ($kode) => $kode !== null && $kode !== '')
+            ->map(fn ($kode) => (string) $kode)
+            ->unique()
+            ->values()
+            ->all();
 
-        $newPrices = Price::whereNotIn('id', $existingKode)->get();
+        $newPrices = Price::query()
+            ->when($existingKeys, function ($query) use ($existingKeys) {
+                $query->whereNotIn('id', $existingKeys)
+                    ->whereNotIn('KODE', $existingKeys);
+            })
+            ->get();
 
         if ($newPrices->isEmpty()) {
             return response()->json([
@@ -76,7 +88,9 @@ class PriceCusController extends Controller
         foreach ($newPrices as $price) {
             $insertData[] = [
                 'KODECUS' => $kodecus,
-                'KODE' => $price->id,
+                // New rows use the stable business key; legacy id-based rows
+                // remain supported by the duplicate check above.
+                'KODE' => $price->KODE,
                 'TANGGAL' => $price->TANGGAL,
                 'KETERANGAN' => $price->KETERANGAN,
                 'DARI' => $price->DARI,
@@ -142,56 +156,124 @@ class PriceCusController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Validasi input
         $validated = $request->validate([
             'KODECUS' => 'required|string|max:50',
-            'KODE' => 'nullable|string|max:50',
             'NAMACUS' => 'nullable|string|max:50',
             'FROM' => 'nullable|string|max:30',
             'TO' => 'nullable|string|max:30',
-            'HARGA' => 'nullable|numeric',
+            'HARGA' => 'required|numeric',
             'TANGGAL' => 'nullable|date',
-            'DARI' => 'nullable|numeric',
-            'SAMPAI' => 'nullable|numeric',
-            'RUTE' => 'nullable|string|max:30',
-            'KETERANGAN' => 'nullable|string|max:50',
+            'DARI' => 'required|numeric',
+            'SAMPAI' => 'required|numeric',
+            'RUTE' => 'required|string|max:30',
+            'KETERANGAN' => 'required|string|max:50',
             'HV' => 'nullable|numeric',
             'HKG' => 'nullable|numeric',
             'HBOK' => 'nullable|numeric',
             'KUNCI' => 'nullable|string|max:100',
             'HG' => 'nullable|numeric',
-            'JENIS' => 'nullable|string|max:1',
+            'JENIS' => 'required|string|max:1',
         ]);
 
-        $user = $request->user()->name ?? 'system';
-        $validated['USER'] = $user;
-        $validated['USEREDIT'] = $user;
+        $user = $request->user()?->name ?? 'system';
+        $tanggal = now()->format('Y-m-d');
 
-        // Map legacy DARI/SAMPAI to FROM/TO if FROM/TO empty
-        if (empty($validated['FROM']) && ! empty($request->input('DARI'))) {
-            $validated['FROM'] = (string) $request->input('DARI');
-        }
-        if (empty($validated['TO']) && ! empty($request->input('SAMPAI'))) {
-            $validated['TO'] = (string) $request->input('SAMPAI');
-        }
+        // 2. Siapkan nilai default
+        $hv = $validated['HV'] ?? 0;
+        $hkg = $validated['HKG'] ?? 0;
+        $hbok = $validated['HBOK'] ?? 0;
+        $hg = $validated['HG'] ?? 0;
 
-        // Set default values
-        $validated['HV'] = $validated['HV'] ?? 0;
-        $validated['HKG'] = $validated['HKG'] ?? 0;
-        $validated['HBOK'] = $validated['HBOK'] ?? 0;
-        $validated['HG'] = $validated['HG'] ?? 0;
+        // 3. Generate KUNCI
+        $kunci = ($validated['KETERANGAN'] ?? '')
+            .($validated['JENIS'] ?? '')
+            .($validated['DARI'] ?? '')
+            .($validated['SAMPAI'] ?? '');
 
-        // Generate KUNCI
-        $validated['KUNCI'] = ($validated['KETERANGAN'] ?? '').
-                              ($validated['JENIS'] ?? '').
-                              ($validated['DARI'] ?? '').
-                              ($validated['SAMPAI'] ?? '');
+        // 4. Simpan master dan harga customer dalam satu transaksi
+        $priceCus = DB::transaction(function () use (
+            $validated,
+            $user,
+            $tanggal,
+            $hv,
+            $hkg,
+            $hbok,
+            $hg,
+            $kunci
+        ) {
+            // Cari kode master terakhir.
+            // Format contoh: PRC0000001
+            $lastCode = Price::where('KODE', 'LIKE', 'PRC%')
+                ->orderByDesc('KODE')
+                ->lockForUpdate()
+                ->value('KODE');
 
-        PriceCus::create($validated);
+            $number = $lastCode
+                ? ((int) substr($lastCode, 3)) + 1
+                : 1;
 
-        PriceCushis::create($validated);
+            $kode = 'PRC'.str_pad(
+                $number,
+                7,
+                '0',
+                STR_PAD_LEFT
+            );
 
-        return redirect()->route('price-customer.customer-prices', $validated['KODECUS'])
-            ->with('success', 'Price customer berhasil ditambahkan.');
+            // 5. Simpan master ke tabel prices terlebih dahulu
+            $price = Price::create([
+                'KODE' => $kode,
+                'HARGA' => $validated['HARGA'],
+                'TANGGAL' => $tanggal,
+                'DARI' => $validated['DARI'],
+                'SAMPAI' => $validated['SAMPAI'],
+                'RUTE' => $validated['RUTE'],
+                'KETERANGAN' => $validated['KETERANGAN'],
+                'HV' => $hv,
+                'HKG' => $hkg,
+                'HBOK' => $hbok,
+                'KUNCI' => $kunci,
+                'HG' => $hg,
+                'JENIS' => $validated['JENIS'],
+                'USER' => $user,
+                'USEREDIT' => $user,
+            ]);
+
+            // 6. Simpan harga customer ke tabel pricecus
+            // KODE harus sama dengan KODE master di prices
+            return PriceCus::create([
+                'KODECUS' => $validated['KODECUS'],
+                'KODE' => $price->KODE,
+                'NAMACUS' => $validated['NAMACUS'] ?? null,
+                'FROM' => $validated['FROM'] ?? null,
+                'TO' => $validated['TO'] ?? null,
+                'HARGA' => $validated['HARGA'],
+                'TANGGAL' => $tanggal,
+                'DARI' => $validated['DARI'],
+                'SAMPAI' => $validated['SAMPAI'],
+                'RUTE' => $validated['RUTE'],
+                'KETERANGAN' => $validated['KETERANGAN'],
+                'HV' => $hv,
+                'HKG' => $hkg,
+                'HBOK' => $hbok,
+                'KUNCI' => $kunci,
+                'HG' => $hg,
+                'JENIS' => $validated['JENIS'],
+                'USER' => $user,
+                'USEREDIT' => $user,
+            ]);
+        });
+
+        // 7. Kembali ke halaman harga customer
+        return redirect()
+            ->route(
+                'price-customer.customer-prices',
+                $priceCus->KODECUS
+            )
+            ->with(
+                'success',
+                'Master harga dan harga customer berhasil disimpan.'
+            );
     }
 
     public function edit(PriceCus $priceCus)
@@ -252,9 +334,26 @@ class PriceCusController extends Controller
     public function destroy(PriceCus $priceCus)
     {
         $kodecus = $priceCus->KODECUS;
+        $keterangan = trim((string) $priceCus->KETERANGAN);
+
+        $isUsed = \DB::table('expedisis')
+            ->where('CUSTOMER_KODE', $kodecus)
+            ->whereRaw('TRIM(PESANAN) = ?', [$keterangan])
+            ->exists();
+
+        if ($isUsed) {
+            return redirect()
+                ->route('price-customer.customer-prices', $kodecus)
+                ->with(
+                    'error',
+                    'Price customer tidak bisa dihapus karena sudah digunakan pada data ekspedisi.'
+                );
+        }
+
         $priceCus->delete();
 
-        return redirect()->route('price-customer.customer-prices', $kodecus)
+        return redirect()
+            ->route('price-customer.customer-prices', $kodecus)
             ->with('success', 'Price customer berhasil dihapus.');
     }
 
