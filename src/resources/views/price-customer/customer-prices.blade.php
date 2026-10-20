@@ -1,9 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid" data-debug="transaksiPriceCustomerDetail"
-    x-data="priceCusPage('{{ $customer->CUSTOMER }}')"
-    x-init="init()"
+
+<div class="container-fluid"
+    data-debug="transaksiPriceCustomerDetail"
+    data-update-all-url="{{ route('price-customer.update-all', '__KODECUS__') }}"
+    data-update-row-url="{{ route('price-customer.update-row') }}"
+    data-success-message="{{ session('success') }}"
+    x-data="priceCusPage(@js(trim($customer->CUSTOMER)))"
     @price-saved.window="showToast($event.detail.message, $event.detail.type)">
     <div class="row mb-3" data-debug="transaksiPriceCustomerDetailHeader">
         <div class="col">
@@ -96,11 +100,11 @@
                 </thead>
                 <tbody>
                     @forelse($priceCuses as $p)
-                    <tr x-data="priceRow({
+                    <tr x-data='priceRow({
                         id: @json($p->id),
                         kode: @json($p->KODE ?? null),
-                        originalPrice: @json($p->HARGA ? (float) $p->HARGA : 0),
-                    })" data-debug="transaksiPriceCustomerDetailRow_{{ $p->id }}">
+                        originalPrice: @json((float) ($p->HARGA ?? 0))
+                    })' data-debug="transaksiPriceCustomerDetailRow_{{ $p->id }}">
                         <td>{{ $priceCuses->firstItem() + $loop->index }}</td>
                         <td>{{ $p->KETERANGAN ?? '-' }}</td>
                         <td>{{ $p->DARI ?? '-' }}</td>
@@ -124,9 +128,9 @@
                                         <span class="spinner-border spinner-border-sm"></span>
                                     </template>
                                 </button>
-                                <a href="{{ route('price-customer.edit', $p) }}" id="btnEditPriceCus_{{ $p->id }}" data-debug="transaksiPriceCustomerDetailEditBtn_{{ $p->id }}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                {{-- <a href="{{ route('price-customer.edit', $p) }}" id="btnEditPriceCus_{{ $p->id }}" data-debug="transaksiPriceCustomerDetailEditBtn_{{ $p->id }}" class="btn btn-sm btn-outline-warning" title="Edit">
                                     <i class="bi bi-pencil"></i>
-                                </a>
+                                </a> --}}
                                 <form class="d-inline" method="POST" action="{{ route('price-customer.destroy', $p) }}" onsubmit="return confirm('Hapus price customer {{ $p->KETERANGAN ?? $p->KODE }}?')">
                                     @csrf
                                     @method('DELETE')

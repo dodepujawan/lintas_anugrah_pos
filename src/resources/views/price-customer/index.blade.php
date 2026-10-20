@@ -47,7 +47,7 @@
                         <td>{{ $c->TELEPON ?? '-' }}</td>
                         <td>{{ $c->EMAIL ?? '-' }}</td>
                         <td class="text-center">
-                            <a href="{{ route('price-customer.customer-prices', $c->CUSTOMER) }}" id="btnViewPriceCus_{{ $c->CUSTOMER }}" data-debug="transaksiPriceCustomerView_{{ $c->CUSTOMER }}" class="btn btn-sm btn-outline-primary" title="Lihat Price">
+                            <a href="{{ route('price-customer.customer-prices', trim($c->CUSTOMER)) }}" id="btnViewPriceCus_{{ $c->CUSTOMER }}" data-debug="transaksiPriceCustomerView_{{ $c->CUSTOMER }}" class="btn btn-sm btn-outline-primary" title="Lihat Price">
                                 <i class="bi bi-eye"></i>
                             </a>
                         </td>
