@@ -557,7 +557,11 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     Route::resource('price-rent', PricedinginController::class)
         ->except(['show'])
         ->parameters(['price-rent' => 'price']);
-    Route::resource('price-rent-customer', PricedingincusController::class);
+    Route::resource('price-rent-customer', PricedingincusController::class)
+        ->parameters(['price-rent-customer' => 'pricedingincus']);
+    Route::get('price-rent-customer/{kodecus}/prices', [PricedingincusController::class, 'customerPrices'])->name('price-rent-customer.customer-prices');
+    Route::post('price-rent-customer/{kodecus}/update-all', [PricedingincusController::class, 'updateAll'])->name('price-rent-customer.update-all');
+    Route::post('price-rent-customer/update-row', [PricedingincusController::class, 'saveRow'])->name('price-rent-customer.update-row');
 
     /*
     | Expedisi (EKS)

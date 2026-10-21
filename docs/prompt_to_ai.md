@@ -50,6 +50,13 @@ Baca dulu SEBELUM mulai:
 - Delete masih mengikuti resource MVC dan belum menambahkan cascade ke `pricedingincus`; jangan mengubah policy ini tanpa verifikasi kebutuhan bisnis.
 - Keputusan stack: implementasi lanjutan tetap memakai Bootstrap 5 + Alpine.js + form MVC/full reload, bukan jQuery/DataTables.
 
+## Price Rent Customer Current State
+- `price-rent-customer.index` adalah daftar customer.
+- Detail customer berada di `price-rent-customer/{kodecus}/prices`.
+- Detail menyediakan info customer, `Update Harga Sewa`, dan inline update HARGA melalui Alpine.
+- Endpoint aktif: `price-rent-customer.update-all` dan `price-rent-customer.update-row`.
+- Ini menggantikan toggle DataTables lama dengan halaman MVC + Alpine; master tetap membuat copy awal ke `pricedingincus` seperti source lama.
+
 ## ⚠️ WARNING: Step-by-step, satu modul per satu modul
 CONTOH: ada 3 modul Ekspedisi, Rent Pendingin, Coolroom → kerjakan Eksedisi dulu sampai DONE, setelah itu programmer cek di browser, baru lanjut ke Rent Pendingin, lalu Coolroom. Jangan lompat ke semua modul sekaligus.
 
