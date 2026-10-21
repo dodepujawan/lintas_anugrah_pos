@@ -5,6 +5,13 @@
 **Tanggal update:** 2026-10-12 14:20 (FINAL)
 **Branch:** `main` (committed 3x: 1f1f874, 9214225, 4c06666)
 **Stack:** Laravel 12 + Breeze + Tailwind + Bootstrap 5 + dompdf + Custom Permission (Role+Menu)
+| 2026-10-21 08:15 | Audit: Price Rent / Price Dingin migration | CRUD dasar `src` tersedia, tetapi belum setara dengan `src_old`: belum ada lookup kendaraan/modal Alpine, belum generate `KODEDGN`/`TANGGAL`/`KUNCI`, belum derive `JENIS` dari kendaraan, belum sync master ke semua `pricedingincus`, index belum menampilkan nama kendaraan, search belum mencakup PLAT/ITEM/PERIODE/JENIS, dan resource binding `{price_rent}` belum konsisten dengan `Pricedingin $price`. Backlog ini dicatat di `docs/prompt_to_ai.md`; implementasi berikutnya tetap MVC + Alpine/full reload. | Audit selesai, implementasi belum dimulai |
+| 2026-10-21 08:30 | Implementasi Price Rent / Price Dingin | Disamakan dengan alur `src_old` menggunakan MVC + Alpine: form sekarang memilih kendaraan dan otomatis mengisi PLAT/JENIS/ITEM, FROM/TO/KUNCI dihapus dari input, controller generate KODEDGN `PRD0000001+`, TANGGAL, KUNCI, derive field dari kendaraan, dan membuat copy ke semua `pricedingincus` dalam transaction. Index menampilkan nama kendaraan dan search KODEDGN/KODE/PERIODE/PLAT/JENIS/ITEM; route binding memakai `{price}` dan resource mengecualikan show. | Blade compile OK, 13/13 tests pass |
+| 2026-10-21 09:20 | Fix: `kendaraans.JENIS` length | Migration lama `2026_10_13_000010` tidak diubah karena dapat sudah recorded. Ditambahkan migration baru aman `2026_10_21_000001_fix_kendaraans_jenis_length.php`: hanya MySQL, cek metadata aktual, alter hanya jika panjang masih <50, dan no-op jika sudah diperbaiki manual di phpMyAdmin. `JENIS` pada tabel harga tetap tidak diubah karena merupakan kode harga. | Pending VPS `php artisan migrate` |
+| 2026-10-21 09:35 | Price Rent form completeness | `JENIS MOBIL` sekarang eksplisit di create/edit dengan `name="JENIS"`, terisi dari kendaraan saat select berubah, dan backend tetap derive ulang dari `kendaraans.JENIS`. `PLAT`/`ITEM` juga diberi name. Memperbaiki wrapper Alpine pada edit form yang sebelumnya menyebabkan field turunan tidak terinisialisasi. | Blade compile OK, 13/13 tests pass |
+| 2026-10-21 09:45 | Fix: Price Rent legacy field mapping | Koreksi mapping sesuai `src_old`: field tampilan Jenis Mobil memakai `kendaraan.NAMA`, field database `JENIS` tetap memakai `kendaraan.JENIS`, dan `ITEM` dibuat dari `PLAT + kendaraan.JENIS`; `PERIODE` disimpan terpisah dan tidak masuk formula `ITEM`. | Blade compile OK, 13/13 tests pass |
+| 2026-10-21 10:40 | Fix: Price Rent `TANGGAL` truncation | Runtime `pricedingins.TANGGAL` masih `VARCHAR(10)`, sedangkan cast date pada model mengirim datetime 19 karakter. Removed `TANGGAL` date casts from `Pricedingin`, `Pricedingincus`, dan `Pricedinginhis`; controller sudah menyimpan format `Y-m-d`. | Pint passed, 13/13 tests pass |
+| 2026-10-21 10:50 | Fix: Price Rent customer `NAMACUS` truncation | `mcustomer.NAMACUST` dapat 100 karakter, tetapi `pricedingincus.NAMACUS` masih 50 sehingga batch copy customer gagal pada row 443. Added safe idempotent migration `2026_10_21_000002_fix_pricedingincus_namacus_length.php` untuk mengubah ke `VARCHAR(100)` hanya jika kapasitas aktual kurang dari 100. | Pending VPS `php artisan migrate` |
 
 ---
 
@@ -292,6 +299,8 @@ $ php artisan test --filter=Transaksi
 | 2026-10-20 15:00 | Price customer performance + compatibility | Detail query memakai `simplePaginate(20)` dan `orderBy(DARI, SAMPAI, id)`. Added safe idempotent migration `2026_10_20_000001_add_price_customer_query_indexes.php` for `pricecus_kodecus_dari_sampai_id_index`. Fixed `Update All` to recognize legacy `pricecus.KODE` values stored as either `prices.id` or `prices.KODE`; new sync rows use `prices.KODE` to prevent duplicates. | 13/13 tests pass |
 
 ---
+
+| 2026-10-21 08:15 | Audit: Price Rent / Price Dingin migration | CRUD dasar `src` tersedia, tetapi belum setara dengan `src_old`: belum ada lookup kendaraan/modal Alpine, belum generate `KODEDGN`/`TANGGAL`/`KUNCI`, belum derive `JENIS` dari kendaraan, belum sync master ke semua `pricedingincus`, index belum menampilkan nama kendaraan, search belum mencakup PLAT/ITEM/PERIODE/JENIS, dan resource binding `{price_rent}` belum konsisten dengan `Pricedingin $price`. Backlog ini dicatat di `docs/prompt_to_ai.md`; implementasi berikutnya tetap MVC + Alpine/full reload. | Audit selesai, implementasi belum dimulai |
 
 ## 📊 Migration File Status (untuk user)
 

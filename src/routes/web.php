@@ -554,7 +554,9 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     Route::get('price-customer/{kodecus}/prices', [PriceCusController::class, 'customerPrices'])->name('price-customer.customer-prices');
     Route::post('price-customer/{kodecus}/update-all', [PriceCusController::class, 'updateAll'])->name('price-customer.update-all');
     Route::post('price-customer/update-row', [PriceCusController::class, 'saveRow'])->name('price-customer.update-row');
-    Route::resource('price-rent', PricedinginController::class);
+    Route::resource('price-rent', PricedinginController::class)
+        ->except(['show'])
+        ->parameters(['price-rent' => 'price']);
     Route::resource('price-rent-customer', PricedingincusController::class);
 
     /*

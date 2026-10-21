@@ -35,6 +35,21 @@ Baca dulu SEBELUM mulai:
 4. Setelah perubahan, jalankan `php artisan test --filter=Transaksi`, lint terkait, dan catat hasilnya di `docs/progress_migrasi.md`.
 5. Jika melanjutkan fitur lama, prioritaskan modal/pengelolaan RUTE; jangan mengembalikan Yajra DataTables atau jQuery.
 
+## Source Of Truth: Price Rent / Price Dingin (audit 2026-10-21)
+- View lama: `src_old/resources/views/priceDingin/priceDingin.blade.php`.
+- Controller lama: `src_old/app/Http/Controllers/PricedinginController.php`.
+- View aktif: `src/resources/views/price-rent/index.blade.php`, `create.blade.php`, `edit.blade.php`.
+- Controller aktif: `src/app/Http/Controllers/PricedinginController.php`.
+- Status: core migration sudah diimplementasikan pada 2026-10-21; browser verification dan migration status di MySQL masih wajib dilakukan.
+- Gap kritis yang harus dipenuhi sebelum modul dianggap selesai:
+- 1-8 di atas sudah ditangani pada core implementation: store memvalidasi kendaraan, generate `KODEDGN`/`TANGGAL`/`KUNCI`, mengisi field turunan, membuat copy seluruh customer, index menampilkan kendaraan, search diperluas, dan route binding diperbaiki. Endpoint `getData()` lama tetap hanya compatibility JSON dan tidak dipakai view baru.
+- Form `src` sengaja menggunakan select kendaraan + Alpine field turunan, bukan modal jQuery; `FROM`, `TO`, dan `KUNCI` tidak lagi menjadi input user.
+- Compatibility detail: master `pricedingins.KODEDGN` memakai kode generated `PRD...`, sedangkan copy `pricedingincus.KODEDGN` mengikuti kontrak lama dan menyimpan numeric `pricedingins.id`.
+- TANGGAL price rent: runtime legacy migration menggunakan string `VARCHAR(10)`; `Pricedingin`, `Pricedingincus`, dan `Pricedinginhis` tidak boleh memakai cast `date` yang men-serialize menjadi `Y-m-d H:i:s`. Controller menyimpan `Y-m-d`.
+- `pricedingincus.NAMACUS` harus menampung data seperti `mcustomer.NAMACUST`; migration `2026_10_21_000002_fix_pricedingincus_namacus_length.php` memperbesar kapasitas secara aman dari 50 ke 100 karakter.
+- Delete masih mengikuti resource MVC dan belum menambahkan cascade ke `pricedingincus`; jangan mengubah policy ini tanpa verifikasi kebutuhan bisnis.
+- Keputusan stack: implementasi lanjutan tetap memakai Bootstrap 5 + Alpine.js + form MVC/full reload, bukan jQuery/DataTables.
+
 ## ⚠️ WARNING: Step-by-step, satu modul per satu modul
 CONTOH: ada 3 modul Ekspedisi, Rent Pendingin, Coolroom → kerjakan Eksedisi dulu sampai DONE, setelah itu programmer cek di browser, baru lanjut ke Rent Pendingin, lalu Coolroom. Jangan lompat ke semua modul sekaligus.
 
@@ -61,6 +76,7 @@ Format: `transaksi[Modul][Halaman]_[Element]`
 - Untuk kolom yang ada data lama: **clean data first** (`UPDATE ... SET col = NULL WHERE invalid`), baru ubah tipe kolom.
 - Untuk kolom timestamp old FoxPro data: `SET SESSION sql_mode = ''` sebelum ALTER TABLE untuk avoid '0000-00-00' datetime validation error.
 - Migration baru HARUS punya `down()` method yang valid (atau kosong dengan comment).
+- Koreksi `kendaraans.JENIS`: jangan edit migration lama `2026_10_13_000010` yang mungkin sudah recorded; migration baru `2026_10_21_000001_fix_kendaraans_jenis_length.php` mengubah schema existing maupun fresh-install menjadi `CHAR(50)` secara aman/idempotent. Jangan mengubah `JENIS` pada `prices`/`pricecus` karena kolom tersebut adalah kode harga 1 karakter.
 
 ## Schema mismatch pattern (sering terjadi!)
 Schema lama (FoxPro, Uppercase) vs schema baru (Laravel, migrasi ke FROM/TO) punya perbedaan kolom:

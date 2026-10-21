@@ -17,8 +17,4 @@ class Pricedingincus extends Model
         'HARGA', 'KUNCI', 'USER', 'USEREDIT',
         'FROM', 'TO',
     ];
-
-    protected $casts = [
-        'TANGGAL' => 'date',
-    ];
 }

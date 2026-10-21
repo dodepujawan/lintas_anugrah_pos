@@ -1,10 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid" data-debug="transaksiPriceRentCreate">
+<div class="container-fluid" data-debug="transaksiPriceRentCreate"
+    x-data="priceRentForm(@js($vehicles), @js(old('KODE')))">
     <div class="row mb-3">
         <div class="col">
-            <h1 class="page-title mb-1">Tambah Price Rent</h1>
+            <h1 class="page-title mb-1">Tambah Price Dingin</h1>
+            <p class="text-muted small mb-0">Harga sewa kendaraan dingin</p>
         </div>
         <div class="col-auto">
             <button type="submit" form="priceForm" id="btnSimpanPriceRent" data-debug="transaksiPriceRentCreateSave" class="btn btn-success btn-sm">
@@ -31,49 +33,34 @@
         <div class="card">
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-2">
-                        <label class="form-label">KODEDGN</label>
-                        <input type="text" name="KODEDGN" data-debug="transaksiPriceRentCreate_KODEDGN" class="form-control form-control-sm">
+                    <div class="col-md-6">
+                        <label class="form-label">Kendaraan <span class="text-danger">*</span></label>
+                        <select name="KODE" x-model="selectedCode" @change="selectVehicle()" data-debug="transaksiPriceRentCreate_KODE" class="form-select form-select-sm" required>
+                            <option value="">Pilih kendaraan</option>
+                            <template x-for="vehicle in vehicles" :key="vehicle.KODE">
+                                <option :value="vehicle.KODE" x-text="vehicle.KODE + ' - ' + (vehicle.NAMA || vehicle.PLAT || '-')"></option>
+                            </template>
+                        </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">KODE</label>
-                        <input type="text" name="KODE" data-debug="transaksiPriceRentCreate_KODE" class="form-control form-control-sm">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">TANGGAL</label>
-                        <input type="date" name="TANGGAL" data-debug="transaksiPriceRentCreate_TANGGAL" class="form-control form-control-sm">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">PERIODE</label>
-                        <input type="text" name="PERIODE" data-debug="transaksiPriceRentCreate_PERIODE" class="form-control form-control-sm">
-                    </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label class="form-label">PLAT</label>
-                        <input type="text" name="PLAT" data-debug="transaksiPriceRentCreate_PLAT" class="form-control form-control-sm">
+                        <input type="text" name="PLAT" x-model="plat" data-debug="transaksiPriceRentCreate_PLAT" class="form-control form-control-sm" readonly>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">JENIS</label>
-                        <input type="text" name="JENIS" data-debug="transaksiPriceRentCreate_JENIS" class="form-control form-control-sm">
+                    <div class="col-md-3">
+                        <label class="form-label">JENIS MOBIL</label>
+                        <input type="text" name="JENIS" x-model="jenis" data-debug="transaksiPriceRentCreate_JENIS" class="form-control form-control-sm" readonly>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">ITEM</label>
-                        <input type="text" name="ITEM" data-debug="transaksiPriceRentCreate_ITEM" class="form-control form-control-sm">
+                    <div class="col-md-6">
+                        <label class="form-label">PERIODE <span class="text-danger">*</span></label>
+                        <input type="text" name="PERIODE" x-model="period" data-debug="transaksiPriceRentCreate_PERIODE" class="form-control form-control-sm" placeholder="Contoh: PERIODE-2024" required>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">FROM</label>
-                        <input type="text" name="FROM" data-debug="transaksiPriceRentCreate_FROM" class="form-control form-control-sm">
+                    <div class="col-md-6">
+                        <label class="form-label">NAMA ITEM</label>
+                        <input type="text" name="ITEM" x-model="item" data-debug="transaksiPriceRentCreate_ITEM" class="form-control form-control-sm" readonly>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">TO</label>
-                        <input type="text" name="TO" data-debug="transaksiPriceRentCreate_TO" class="form-control form-control-sm">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">HARGA</label>
-                        <input type="number" name="HARGA" data-debug="transaksiPriceRentCreate_HARGA" class="form-control form-control-sm">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">KUNCI</label>
-                        <input type="text" name="KUNCI" data-debug="transaksiPriceRentCreate_KUNCI" class="form-control form-control-sm">
+                    <div class="col-md-6">
+                        <label class="form-label">HARGA <span class="text-danger">*</span></label>
+                        <input type="number" name="HARGA" value="{{ old('HARGA') }}" data-debug="transaksiPriceRentCreate_HARGA" class="form-control form-control-sm" min="0" step="1" required>
                     </div>
                 </div>
             </div>
@@ -81,3 +68,34 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('priceRentForm', (vehicles, initialCode) => ({
+        vehicles: vehicles || [],
+        selectedCode: initialCode || '',
+        plat: '',
+        jenis: '',
+        period: @js(old('PERIODE', '')),
+        item: '',
+
+        init() {
+            this.selectVehicle();
+        },
+
+        selectVehicle() {
+            const vehicle = this.vehicles.find((item) => item.KODE === this.selectedCode);
+            this.plat = vehicle?.PLAT || '';
+            this.jenis = vehicle?.NAMA || '';
+            this.updateItem();
+        },
+
+        updateItem() {
+            const vehicle = this.vehicles.find((item) => item.KODE === this.selectedCode);
+            this.item = [this.plat, vehicle?.JENIS].filter(Boolean).join(' ');
+        }
+    }));
+});
+</script>
+@endpush

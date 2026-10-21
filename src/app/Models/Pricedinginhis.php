@@ -16,8 +16,4 @@ class Pricedinginhis extends Model
         'TANGGAL', 'PERIODE', 'PLAT', 'JENIS', 'ITEM',
         'HARGA', 'KUNCI', 'USER', 'USEREDIT',
     ];
-
-    protected $casts = [
-        'TANGGAL' => 'date',
-    ];
 }
