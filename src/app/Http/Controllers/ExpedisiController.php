@@ -12,6 +12,7 @@ use App\Models\Pajak;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Mpdf\Mpdf;
 
 class ExpedisiController extends Controller
 {
@@ -376,9 +377,35 @@ class ExpedisiController extends Controller
 
     public function printSuratJalan(Expedisi $expedisi)
     {
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('expedisi.pdf.surjal', compact('expedisi'));
+        $expedisi->PLAT = Kendaraan::query()
+            ->where('KODE', $expedisi->KENDARAAN)
+            ->value('PLAT');
 
-        return $pdf->stream('surat-jalan-' . $expedisi->NOSJ . '.pdf', ['stream' => true]);
+        $user = auth()->user();
+        if ($user->role_old !== 'admin' && $expedisi->user_id !== $user->user_id) {
+            abort(403, 'Anda tidak berhak mencetak surat jalan ini');
+        }
+
+        $tempPath = storage_path('app/mpdf-temp');
+        if (! is_dir($tempPath)) {
+            mkdir($tempPath, 0775, true);
+        }
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'tempDir' => $tempPath,
+        ]);
+
+        $html = view('expedisi.pdf.surjal', compact('expedisi'))->render();
+        $mpdf->WriteHTML($html);
+
+        return response($mpdf->Output('Surat-Jalan-'.$expedisi->NOSJ.'.pdf', 'I'))
+            ->header('Content-Type', 'application/pdf');
     }
 
     public function pdfMuat(Request $request, $nomuat = null)
