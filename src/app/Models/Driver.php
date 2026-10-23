@@ -52,6 +52,9 @@ class Driver extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        return trim((string) ($this->NAMA ?? $this->name ?? 'Tanpa Nama'));
+        $legacyName = trim((string) $this->NAMA);
+        $name = trim((string) $this->name);
+
+        return $legacyName !== '' ? $legacyName : ($name !== '' ? $name : 'Tanpa Nama');
     }
 }

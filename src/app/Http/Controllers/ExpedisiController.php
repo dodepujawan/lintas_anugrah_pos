@@ -7,9 +7,8 @@ use App\Models\Expedisi;
 use App\Models\Mcustomer;
 use App\Models\Kendaraan;
 use App\Models\Driver;
-use App\Models\Arh;
-use App\Services\JournalService;
-use App\Services\AccountMap;
+use App\Models\PriceCus;
+use App\Models\Pajak;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -37,12 +36,12 @@ class ExpedisiController extends Controller
                 });
             })
             ->when($filterDate, function ($query, $date) {
-                $query->whereDate('TGLMUAT', $date);
+                $query->whereDate('tglsj', $date);
             })
             ->when($filterStatus, function ($query, $status) {
                 $query->where('STS', $status);
             })
-            ->orderByDesc('TGLMUAT')
+            ->orderByDesc('tglsj')
             ->orderByDesc('NOSJ')
             ->paginate(20)
             ->withQueryString();
@@ -57,62 +56,137 @@ class ExpedisiController extends Controller
         $drivers = Driver::orderBy('KODE')->get(['KODE', 'NAMA']);
         $rutes = \App\Models\Rute::orderBy('FROM')->get(['FROM', 'TO', 'RUTE', 'HARGA']);
 
-        return view('expedisi.create', compact('customers', 'kendaraans', 'drivers', 'rutes'));
+        $ppnRate = (float) (Pajak::where('is_active', true)->latest('updated_at')->value('PPN') ?? 0);
+
+        return view('expedisi.create', compact('customers', 'kendaraans', 'drivers', 'rutes', 'ppnRate'));
+    }
+
+    public function dataItems(Request $request)
+    {
+        $customer = trim((string) $request->input('customer'));
+        $search = trim((string) $request->input('q'));
+
+        if ($customer === '') {
+            return response()->json([]);
+        }
+
+        $items = PriceCus::query()
+            ->where('KODECUS', $customer)
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('KETERANGAN', 'like', "%{$search}%")
+                        ->orWhere('RUTE', 'like', "%{$search}%")
+                        ->orWhere('DARI', 'like', "%{$search}%")
+                        ->orWhere('SAMPAI', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('KETERANGAN')
+            ->paginate(10)
+            ->withQueryString();
+
+        return response()->json($items);
+    }
+
+    public function dataCustomers(Request $request)
+    {
+        $search = trim((string) $request->input('q'));
+
+        return response()->json(Mcustomer::query()
+            ->when($search, fn ($query) => $query->where(function ($q) use ($search) {
+                $q->where('CUSTOMER', 'like', "%{$search}%")
+                    ->orWhere('kode_cus', 'like', "%{$search}%")
+                    ->orWhere('NAMACUST', 'like', "%{$search}%");
+            }))
+            ->orderBy('CUSTOMER')
+            ->paginate(10)
+            ->withQueryString());
+    }
+
+    public function dataDrivers(Request $request)
+    {
+        $search = trim((string) $request->input('q'));
+        $drivers = Driver::query()
+            ->where(fn ($query) => $query->where('is_active', true)->orWhereNull('is_active'))
+            ->when($search, fn ($query) => $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('KODE', 'like', "%{$search}%")
+                    ->orWhere('NAMA', 'like', "%{$search}%");
+            }))
+            ->orderBy('code')
+            ->paginate(10)
+            ->withQueryString();
+
+        $drivers->getCollection()->transform(fn (Driver $driver) => [
+            'id' => $driver->id,
+            'code' => $driver->KODE ?: $driver->code,
+            'name' => $driver->display_name,
+        ]);
+
+        return response()->json($drivers);
+    }
+
+    public function dataVehicles(Request $request)
+    {
+        $search = trim((string) $request->input('q'));
+        $vehicles = Kendaraan::query()
+            ->when($search, fn ($query) => $query->where(function ($q) use ($search) {
+                $q->where('KODE', 'like', "%{$search}%")
+                    ->orWhere('NAMA', 'like', "%{$search}%");
+            }))
+            ->orderBy('KODE')
+            ->paginate(10)
+            ->withQueryString();
+
+        $vehicles->getCollection()->transform(fn (Kendaraan $vehicle) => [
+            'id' => $vehicle->id,
+            'code' => $vehicle->KODE,
+            'name' => $vehicle->NAMA,
+        ]);
+
+        return response()->json($vehicles);
+    }
+
+    public function previewNoSuratJalan()
+    {
+        return response()->json(['nosj' => $this->nextNoSuratJalan()]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'NOSJ' => 'nullable|string|max:20|unique:expedisis,NOSJ',
-            'TGLMUAT' => 'required|date',
-            'TGLPO' => 'nullable|date',
-            'NOPO' => 'nullable|string|max:20',
-            'CUSTOMER_KODE' => 'nullable|string|max:20',
-            'CUSTOMER' => 'nullable|string|max:30',
-            'KENDARAAN' => 'nullable|string|max:20',
-            'DRIVER' => 'nullable|string|max:20',
-            'DRIVER2' => 'nullable|string|max:20',
-            'JUMLAH' => 'nullable|numeric',
-            'HARGA' => 'nullable|numeric',
-            'TOTAL' => 'nullable|numeric',
-            'PPN' => 'nullable|numeric',
-            'GRAND' => 'nullable|numeric',
-            'DISC' => 'nullable|numeric',
-            'NDISC' => 'nullable|numeric',
-            'NDISCAW' => 'nullable|numeric',
-            'BAYAR' => 'nullable|numeric',
-            'PIUTANG' => 'nullable|numeric',
-            'JENIS' => 'required|string|size:3|default:EKS',
-            'type' => 'nullable|string|max:1',
-            'USER' => 'nullable|string|max:50',
-            'USEREDIT' => 'nullable|string|max:50',
-            'KETERANGAN' => 'nullable|string|max:500',
-            'area_id' => 'nullable|integer',
-            'area_name' => 'nullable|string|max:100',
-        ], [
+        $validated = $request->validate($this->suratJalanRules(), [
             'NOSJ.unique' => 'No Surat Jalan sudah terdaftar.',
-            'TGLMUAT.required' => 'Tanggal muat wajib diisi.',
+            'tglsj.required' => 'Tanggal Surat Jalan wajib diisi.',
+            'CUSTOMER_KODE.required' => 'Customer wajib dipilih.',
+            'rute.required' => 'Rute wajib diisi.',
+            'JUMLAH.required' => 'Jumlah wajib diisi.',
+            'HARGA.required' => 'Harga wajib diisi.',
         ]);
 
         $validated['JENIS'] = 'EKS';
-        $validated['USER'] = $request->user()->name ?? 'system';
+        $validated['STS'] = $validated['STS'] ?? 'INVOICE';
+        $validated['SIMPAN'] = $validated['SIMPAN'] ?? 'N';
+        $validated['READY'] = $validated['READY'] ?? 'Y';
+        $validated['CLOSSING'] = $validated['CLOSSING'] ?? 'N';
+        $validated['KETERANGAN'] = $validated['KETERANGAN'] ?? 'EXPEDISI BARU';
+        $validated['user'] = $request->user()->name ?? 'SYSTEM';
         $validated['USEREDIT'] = $request->user()->name ?? 'system';
+        $validated = $this->calculateSuratJalan($validated, (float) (Pajak::where('is_active', true)->latest('updated_at')->value('PPN') ?? 0));
 
-        DB::transaction(function () use ($validated) {
-            $expedisi = Expedisi::create($validated);
-
-            $piutang = (float) ($validated['PIUTANG'] ?? 0);
-            $bayar = (float) ($validated['BAYAR'] ?? 0);
-            $grand = (float) ($validated['GRAND'] ?? 0);
-
-            if ($piutang > 0 || $bayar > 0) {
-                $this->createArh($expedisi, $validated);
-            }
-
-            if ($grand > 0) {
-                $this->createJournal($expedisi, $validated);
-            }
+        $expedisi = DB::transaction(function () use ($validated) {
+            $validated['NOSJ'] = $validated['NOSJ'] ?: $this->generateNoSuratJalan();
+            return Expedisi::create($validated);
         });
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Surat Jalan berhasil disimpan.',
+                'data' => $expedisi,
+                'print_url' => route('expedisi.print.surjal', $expedisi),
+                'edit_url' => route('expedisi.edit', $expedisi),
+            ]);
+        }
 
         return redirect()
             ->route('expedisi.index')
@@ -131,45 +205,36 @@ class ExpedisiController extends Controller
         $drivers = Driver::orderBy('KODE')->get(['KODE', 'NAMA']);
         $rutes = \App\Models\Rute::orderBy('FROM')->get(['FROM', 'TO', 'RUTE', 'HARGA']);
 
-        return view('expedisi.edit', compact('expedisi', 'customers', 'kendaraans', 'drivers', 'rutes'));
+        $ppnRate = (float) (Pajak::where('is_active', true)->latest('updated_at')->value('PPN') ?? 0);
+
+        return view('expedisi.edit', compact('expedisi', 'customers', 'kendaraans', 'drivers', 'rutes', 'ppnRate'));
     }
 
     public function update(Request $request, Expedisi $expedisi)
     {
-        $validated = $request->validate([
-            'NOSJ' => ['nullable', 'string', 'max:20', Rule::unique('expedisis', 'NOSJ')->ignore($expedisi->id)],
-            'TGLMUAT' => 'required|date',
-            'TGLPO' => 'nullable|date',
-            'NOPO' => 'nullable|string|max:20',
-            'CUSTOMER_KODE' => 'nullable|string|max:20',
-            'CUSTOMER' => 'nullable|string|max:30',
-            'KENDARAAN' => 'nullable|string|max:20',
-            'DRIVER' => 'nullable|string|max:20',
-            'DRIVER2' => 'nullable|string|max:20',
-            'JUMLAH' => 'nullable|numeric',
-            'HARGA' => 'nullable|numeric',
-            'TOTAL' => 'nullable|numeric',
-            'PPN' => 'nullable|numeric',
-            'GRAND' => 'nullable|numeric',
-            'DISC' => 'nullable|numeric',
-            'NDISC' => 'nullable|numeric',
-            'NDISCAW' => 'nullable|numeric',
-            'BAYAR' => 'nullable|numeric',
-            'PIUTANG' => 'nullable|numeric',
-            'JENIS' => 'nullable|string|max:3',
-            'type' => 'nullable|string|max:1',
-            'USEREDIT' => 'nullable|string|max:50',
-            'KETERANGAN' => 'nullable|string|max:500',
-            'area_id' => 'nullable|integer',
-            'area_name' => 'nullable|string|max:100',
-        ]);
+        if ($expedisi->INVOICE || $expedisi->GB) {
+            return back()->with('error', 'Surat Jalan yang sudah masuk invoice atau GB tidak dapat diedit.');
+        }
+
+        $rules = $this->suratJalanRules();
+        $rules['NOSJ'] = ['nullable', 'string', 'max:20', Rule::unique('expedisis', 'NOSJ')->ignore($expedisi->id)];
+        $validated = $request->validate($rules);
 
         $validated['USEREDIT'] = $request->user()->name ?? 'system';
+        $validated['JENIS'] = 'EKS';
+        $validated['KETERANGAN'] = $validated['KETERANGAN'] ?? $expedisi->KETERANGAN ?? 'EXPEDISI BARU';
+        $validated = $this->calculateSuratJalan($validated, (float) (Pajak::where('is_active', true)->latest('updated_at')->value('PPN') ?? 0));
 
         $expedisi->update($validated);
 
-        if ((float) ($validated['GRAND'] ?? 0) > 0) {
-            $this->updateJournal($expedisi, $validated);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Surat Jalan berhasil diperbarui.',
+                'data' => $expedisi->fresh(),
+                'print_url' => route('expedisi.print.surjal', $expedisi),
+                'edit_url' => route('expedisi.edit', $expedisi),
+            ]);
         }
 
         return redirect()
@@ -224,6 +289,91 @@ class ExpedisiController extends Controller
         return response()->json(['km_terakhir' => $km ?? 0]);
     }
 
+    private function suratJalanRules(): array
+    {
+        return [
+            'NOSJ' => 'nullable|string|max:20|unique:expedisis,NOSJ',
+            'tglsj' => 'required|date',
+            'CUSTOMER_KODE' => 'required|string|max:20',
+            'CUSTOMER' => 'nullable|string|max:30',
+            'PESANAN' => 'nullable|string|max:100',
+            'JENISHRG' => 'nullable|string|max:1',
+            'STS' => 'nullable|string|max:20',
+            'SIMPAN' => 'nullable|string|max:1',
+            'READY' => 'nullable|string|max:1',
+            'CLOSSING' => 'nullable|string|max:1',
+            'user' => 'nullable|string|max:50',
+            'KENDARAAN' => 'nullable|string|max:20',
+            'NAMA_KENDARAAN' => 'nullable|string|max:50',
+            'DRIVER' => 'nullable|string|max:20',
+            'NAMA_DRIVER' => 'nullable|string|max:50',
+            'DRIVER2' => 'nullable|string|max:20',
+            'NAMA_DRIVER2' => 'nullable|string|max:50',
+            'P_PENERIMA' => 'nullable|string|max:100',
+            'P_NAMA' => 'nullable|string|max:50',
+            'P_PHONE' => 'nullable|string|max:50',
+            'P_ALAMAT' => 'nullable|string|max:100',
+            'barang' => 'nullable|string|max:100',
+            'penyimpanan' => 'nullable|string|in:F,C,D',
+            'koli' => 'nullable|numeric|min:0',
+            'catatan' => 'nullable|string|max:500',
+            'rute' => 'required|string|max:30',
+            'JUMLAH' => 'required|numeric|min:0',
+            'UNIT' => 'nullable|string|max:10',
+            'HARGA' => 'required|numeric|min:0',
+            'hargaaw' => 'nullable|numeric|min:0',
+            'DISC' => 'nullable|numeric|min:0|max:100',
+            'DC' => 'nullable|numeric|min:0',
+            'DCAW' => 'nullable|numeric|min:0',
+            'PPN' => 'nullable|numeric|min:0|max:100',
+            'KETERANGAN' => 'nullable|string|max:500',
+            'WILAYAH' => 'required|string|in:denpasar,gianyar',
+            'BAYAR' => 'nullable|numeric|min:0',
+            'PIUTANG' => 'nullable|numeric|min:0',
+            'area_id' => 'nullable|integer',
+            'area_name' => 'nullable|string|max:100',
+        ];
+    }
+
+    private function calculateSuratJalan(array $data, float $ppnRate): array
+    {
+        $subtotal = round((float) ($data['JUMLAH'] ?? 0) * (float) ($data['HARGA'] ?? 0));
+        $discount = round($subtotal * ((float) ($data['DISC'] ?? 0) / 100));
+        $total = $subtotal - $discount;
+        $ppn = round($total * ($ppnRate / 100));
+        $deliveryCharge = (float) ($data['DC'] ?? 0);
+
+        $data['NDISC'] = $discount;
+        $data['NDISCAW'] = $discount;
+        $data['TOTAL'] = $total;
+        $data['GRAND'] = $total + $ppn + $deliveryCharge;
+        $data['PPN'] = $ppnRate;
+        $data['PIUTANG'] = $data['PIUTANG'] ?? $data['GRAND'];
+        $data['UNIT'] = $data['UNIT'] ?: 'KG';
+        $data['hargaaw'] = $data['hargaaw'] ?? $data['HARGA'];
+        $data['DCAW'] = $data['DCAW'] ?? $data['DC'];
+
+        return $data;
+    }
+
+    private function generateNoSuratJalan(): string
+    {
+        return $this->nextNoSuratJalan();
+    }
+
+    private function nextNoSuratJalan(): string
+    {
+        $prefix = 'SJ'.now()->format('my');
+        $last = Expedisi::where('NOSJ', 'like', $prefix.'%')
+            ->lockForUpdate()
+            ->orderByDesc('NOSJ')
+            ->first();
+
+        $next = $last ? ((int) substr($last->NOSJ, -5)) + 1 : 1;
+
+        return $prefix.str_pad((string) $next, 5, '0', STR_PAD_LEFT);
+    }
+
     public function printSuratJalan(Expedisi $expedisi)
     {
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('expedisi.pdf.surjal', compact('expedisi'));
@@ -242,71 +392,4 @@ class ExpedisiController extends Controller
         return $pdf->stream('muat.pdf', ['stream' => true]);
     }
 
-    protected function createArh(Expedisi $expedisi, array $validated): void
-    {
-        Arh::create([
-            'NOFAKTUR' => $validated['INVOICE'] ?? $validated['NOSJ'],
-            'TGLFAKTUR' => $validated['TGLINVOICE'] ?? $validated['TGLMUAT'] ?? now(),
-            'TGLJT' => $validated['TGLJT'] ?? null,
-            'CUSTOMER' => $validated['CUSTOMER'],
-            'SALES' => $validated['USER'] ?? null,
-            'AREA' => $validated['area_name'] ?? null,
-            'DIVISI' => null,
-            'PIUTANG' => $validated['PIUTANG'] ?? 0,
-            'BAYAR' => $validated['BAYAR'] ?? 0,
-            'RETUR' => 0,
-            'DISCOUNT' => $validated['NDISCAW'] ?? 0,
-            'SALDO' => ($validated['PIUTANG'] ?? 0) - ($validated['BAYAR'] ?? 0),
-            'CABANG' => $validated['area_name'] ?? null,
-            'KETERANGAN' => $validated['KETERANGAN'] ?? null,
-            'STATUS' => 'OPEN',
-            'SOURCE' => 'EXPEDITESI',
-            'USER' => $validated['USER'] ?? null,
-            'USER_UPDATE' => $validated['USEREDIT'] ?? null,
-        ]);
-    }
-
-    protected function createJournal(Expedisi $expedisi, array $validated): void
-    {
-        $journalService = app(JournalService::class);
-        $noJurnal = $journalService->generateJournalNumber('JURNAL', $validated['TGLMUAT']);
-        $grand = (float) ($validated['GRAND'] ?? 0);
-
-        $incomeCoaId = AccountMap::id('income_sales') ?? 4;
-        $arCoaId = AccountMap::id('ar_usaha') ?? 11;
-
-        if ($grand > 0) {
-            $jurnal = $journalService->createJournal(
-                $noJurnal,
-                $validated['TGLMUAT'],
-                "Penjualan Expedisi {$expedisi->NOSJ}",
-                [
-                    ['coa_id' => $incomeCoaId, 'debit' => 0, 'kredit' => $grand, 'deskripsi' => 'Penjualan'],
-                    ['coa_id' => $arCoaId, 'debit' => $grand, 'kredit' => 0, 'deskripsi' => 'Piutang Usaha'],
-                ],
-                null,
-                null,
-                'Penjualan',
-                'Penjualan'
-            );
-
-            $expedisi->update([
-                'NOJURNAL' => $noJurnal,
-                'jurnal_id' => $jurnal->id,
-            ]);
-
-            if ($expedisi->INVOICE) {
-                $expedisi->arh()?->update(['NOJURNAL' => $noJurnal]);
-            }
-        }
-    }
-
-    protected function updateJournal(Expedisi $expedisi, array $validated): void
-    {
-        // Journal sudah ada — tidak create journal baru untuk update
-        // Yang penting: update NOJURNAL reference jika belum ada
-        if (! $expedisi->NOJURNAL && (float) ($validated['GRAND'] ?? 0) > 0) {
-            $this->createJournal($expedisi, $validated);
-        }
-    }
 }

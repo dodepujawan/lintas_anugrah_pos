@@ -50,7 +50,7 @@
                     <tr>
                         <th>No</th>
                         <th>NOSJ</th>
-                        <th>Tgl Muat</th>
+                        <th>Tgl SJ</th>
                         <th>Customer</th>
                         <th>Kendaraan</th>
                         <th class="text-end">Grand Total</th>
@@ -63,7 +63,7 @@
                     <tr>
                         <td>{{ $expedisis->firstItem() + $loop->index }}</td>
                         <td class="font-monospace">{{ $e->NOSJ }}</td>
-                        <td>{{ $e->TGLMUAT?->format('d/m/Y') ?? '-' }}</td>
+                        <td>{{ $e->tglsj?->format('d/m/Y') ?? '-' }}</td>
                         <td>{{ $e->CUSTOMER }}</td>
                         <td>{{ $e->NAMA_KENDARAAN ?? $e->KENDARAAN }}</td>
                         <td class="text-end">{{ number_format((float) $e->GRAND, 0, ',', '.') }}</td>

@@ -569,6 +569,16 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |   sidebar_new_expedisi → expedisi.index
     |   sidebar_Invoice_edit_expedisi → expedisi-edit.index (handled via generate-invoice edit)
     */
+    Route::get('expedisi/data/items', [ExpedisiController::class, 'dataItems'])
+        ->name('expedisi.data.items');
+    Route::get('expedisi/data/customers', [ExpedisiController::class, 'dataCustomers'])
+        ->name('expedisi.data.customers');
+    Route::get('expedisi/data/drivers', [ExpedisiController::class, 'dataDrivers'])
+        ->name('expedisi.data.drivers');
+    Route::get('expedisi/data/vehicles', [ExpedisiController::class, 'dataVehicles'])
+        ->name('expedisi.data.vehicles');
+    Route::get('expedisi/preview/no-sj', [ExpedisiController::class, 'previewNoSuratJalan'])
+        ->name('expedisi.preview.no-sj');
     Route::resource('expedisi', ExpedisiController::class);
     Route::get('expedisi/print/surjal/{expedisi}', [ExpedisiController::class, 'printSuratJalan'])
         ->name('expedisi.print.surjal');

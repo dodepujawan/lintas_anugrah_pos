@@ -17,6 +17,7 @@ class Expedisi extends Model
         'KET_SJ', 'TGLINVOICE', 'INVOICE', 'CUSTOMER_KODE', 'CUSTOMER',
         'KENDARAAN', 'NAMA_KENDARAAN', 'DRIVER', 'NAMA_DRIVER', 'KET_DRIVER',
         'DRIVER2', 'NAMA_DRIVER2', 'KET_DRIVER2',
+        'barang', 'penyimpanan', 'koli', 'catatan',
         'UT', 'KET_UT', 'PESANAN', 'PESANANGB', 'GB', 'rute', 'RUTE2',
         'JUMLAH', 'UNIT', 'HARGA', 'hargaaw', 'JENISHRG', 'VOL', 'type',
         'DISC', 'NDISC', 'NDISCAW', 'TOTAL', 'PPN', 'GRAND',
