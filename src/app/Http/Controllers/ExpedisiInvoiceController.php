@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Expedisi;
 use App\Models\Arh;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class ExpedisiInvoiceController extends Controller
 {
@@ -16,54 +17,82 @@ class ExpedisiInvoiceController extends Controller
         $this->middleware('auth');
     }
 
-    public function index(Request $request)
+    public function index()
     {
-        $search = trim((string) $request->input('search'));
-        $expedisis = Expedisi::query()
+        return view('expedisi-invoice-gabung.index');
+    }
+
+    /** Data utama legacy: satu baris master per muat/SJ. */
+    public function getDataMuat(Request $request): JsonResponse
+    {
+        $query = Expedisi::query()
             ->where('JENIS', 'EKS')
-            ->whereNotNull('NOSJ')
-            ->when($search, function ($query) use ($search) {
-                $query->where('NOSJ', 'like', "%{$search}%")
-                    ->orWhere('CUSTOMER', 'like', "%{$search}%");
-            })
-            ->orderByDesc('TGLMUAT')
-            ->paginate(15)
-            ->withQueryString();
+            ->whereNotNull('NOMUAT')
+            ->orderByDesc('TGLMUAT');
 
-        return view('expedisi-invoice-gabung.index', compact('expedisis', 'search'));
+        $status = $request->input('filter_invoice', 'belum');
+        if ($status === 'sudah') {
+            $query->whereNotNull('GB')->where('GB', '<>', '')
+                ->where('HARGA', '>', 0)->where(function ($q) {
+                    $q->whereNull('INVOICE')->orWhere('INVOICE', '');
+                });
+        } else {
+            $query->where(function ($q) {
+                $q->whereNull('GB')->orWhere('GB', '');
+            })->where(function ($q) {
+                $q->whereNull('INVOICE')->orWhere('INVOICE', '');
+            });
+        }
+
+        $query->when($request->filled('tgl_mulai'), fn ($q) => $q->whereDate('TGLMUAT', '>=', $request->tgl_mulai));
+        $query->when($request->filled('tgl_akhir'), fn ($q) => $q->whereDate('TGLMUAT', '<=', $request->tgl_akhir));
+        $query->when($request->filled('search_muat'), function ($q) use ($request) {
+            $term = trim($request->search_muat);
+            $q->where(fn ($sub) => $sub->where('NOMUAT', 'like', "%{$term}%")
+                ->orWhere('CUSTOMER', 'like', "%{$term}%")
+                ->orWhere('rute', 'like', "%{$term}%")
+                ->orWhere('NOSJ', 'like', "%{$term}%"));
+        });
+
+        $rows = $query->get([
+            'id', 'NOMUAT', 'TGLMUAT', 'CUSTOMER', 'CUSTOMER_KODE', 'PESANAN',
+            'GB', 'PESANANGB', 'rute', 'NAMA_KENDARAAN', 'JUMLAH', 'UNIT',
+            'HARGA', 'DISC', 'DC', 'GRAND', 'NOSJ', 'INVOICE', 'JENISHRG',
+        ])->values()->map(fn (Expedisi $row, int $i) => $this->formatRow($row, $i + 1));
+
+        return response()->json(['data' => $rows]);
     }
 
-    public function getDataMuat()
+    /** SJ lain milik customer yang masih dapat dimasukkan ke grup. */
+    public function dataGabung(Request $request): JsonResponse
     {
-        $expedisis = Expedisi::where('JENIS', 'EKS')
-            ->whereNotNull('NOSJ')
-            ->whereNull('INVOICE')
-            ->get(['NOSJ', 'CUSTOMER', 'JUMLAH', 'HARGA', 'TOTAL', 'DISC', 'NDISCAW', 'GRAND', 'TGLMUAT']);
+        $query = Expedisi::query()
+            ->where('JENIS', 'EKS')->whereNotNull('NOMUAT')
+            ->where(function ($q) { $q->whereNull('GB')->orWhere('GB', ''); })
+            ->where(function ($q) { $q->whereNull('INVOICE')->orWhere('INVOICE', ''); })
+            ->when($request->filled('customer_kode'), fn ($q) => $q->where('CUSTOMER_KODE', $request->customer_kode))
+            ->orderBy('TGLMUAT');
 
-        return response()->json($expedisis);
+        return response()->json(['data' => $query->get([
+            'id', 'NOMUAT', 'TGLMUAT', 'NOSJ', 'PESANAN', 'CUSTOMER_KODE', 'CUSTOMER',
+            'rute', 'NAMA_KENDARAAN', 'JUMLAH', 'UNIT', 'JENISHRG', 'HARGA', 'DISC',
+            'DC', 'TOTAL', 'PPN', 'GRAND',
+        ])->values()->map(fn (Expedisi $row, int $i) => $this->formatRow($row, $i + 1, true))]);
     }
 
-    public function dataGabung()
+    /** Muat yang sudah berada pada GB tertentu, untuk mode edit. */
+    public function getExistingGabung(Request $request): JsonResponse
     {
-        $data = Expedisi::where('JENIS', 'EKS')
-            ->whereNull('INVOICE')
-            ->groupBy('CUSTOMER')
-            ->selectRaw('CUSTOMER, SUM(GRAND) as TOTAL_GRAND, SUM(DISC) as TOTAL_DISC, COUNT(*) as COUNT_SJ')
-            ->get();
+        $gb = trim((string) $request->input('gbExist'));
+        $rows = Expedisi::where('GB', $gb)->orderBy('NOSJ')->get();
 
-        return response()->json($data);
+        return response()->json([
+            'data' => $rows->values()->map(fn (Expedisi $row, int $i) => $this->formatRow($row, $i + 1, true)),
+            'master' => $rows->first(),
+        ]);
     }
 
-    public function getExistingGabung()
-    {
-        $invoices = Arh::where('SOURCE', 'Expedisi')
-            ->where('STATUS', 'OPEN')
-            ->get(['NOFAKTUR', 'CUSTOMER', 'SALDO', 'BAYAR', 'SISA']);
-
-        return response()->json($invoices);
-    }
-
-    public function show($noInvoice)
+    public function show(string $noInvoice)
     {
         $invoice = Arh::where('NOFAKTUR', $noInvoice)->firstOrFail();
         $details = Expedisi::where('INVOICE', $noInvoice)->where('JENIS', 'EKS')->get();
@@ -71,59 +100,127 @@ class ExpedisiInvoiceController extends Controller
         return view('expedisi-invoice.show', compact('invoice', 'details'));
     }
 
-    public function storeGabungInvoice(Request $request)
+    public function editGabung(string $noInvoice)
     {
-        $validated = $request->validate([
-            'NOFAKTUR' => 'required|string|max:50|unique:arh,NOFAKTUR',
-            'TGLFAKTUR' => 'required|date',
-            'TGLJT' => 'nullable|date',
-            'CUSTOMER' => 'required|string|max:30',
-            'selected_sj' => 'required|array|min:1',
-            'selected_sj.*' => 'exists:expedisis,NOSJ',
-            'KETERANGAN' => 'nullable|string|max:500',
-        ]);
-
-        $expedisis = Expedisi::whereIn('NOSJ', $validated['selected_sj'])->where('JENIS', 'EKS')->get();
-
-        DB::transaction(function () use ($expedisis, $validated) {
-            $totalGrand = $expedisis->sum('GRAND');
-
-            $arh = Arh::create([
-                'NOFAKTUR' => $validated['NOFAKTUR'],
-                'TGLFAKTUR' => $validated['TGLFAKTUR'],
-                'TGLJT' => $validated['TGLJT'],
-                'CUSTOMER' => $validated['CUSTOMER'],
-                'SALES' => auth()->user()->name ?? null,
-                'AREA' => auth()->user()->area_name ?? null,
-                'PIUTANG' => $totalGrand,
-                'BAYAR' => 0,
-                'SALDO' => $totalGrand,
-                'DISCOUNT' => $expedisis->sum('NDISCAW'),
-                'KETERANGAN' => $validated['KETERANGAN'],
-                'STATUS' => 'OPEN',
-                'SOURCE' => 'Expedisi',
-                'USER' => auth()->user()->name ?? 'system',
-            ]);
-
-            $expedisis->each(fn($e) => $e->update(['INVOICE' => $validated['NOFAKTUR']]));
-        });
-
-        return redirect()->route('expedisi-invoice.index')
-            ->with('success', 'Gabung invoice berhasil.');
+        return redirect()->route('expedisi-invoice.index', ['gb' => $noInvoice]);
     }
 
-    public function updateGabungInvoice(Request $request, $noInvoice)
+    public function storeGabungInvoice(Request $request): JsonResponse
     {
-        $arh = Arh::where('NOFAKTUR', $noInvoice)->firstOrFail();
+        return $this->saveGroup($request, null);
+    }
 
-        $arh->update([
-            'TGLFAKTUR' => $request->input('TGLFAKTUR'),
-            'TGLJT' => $request->input('TGLJT'),
-            'CUSTOMER' => $request->input('CUSTOMER'),
-            'KETERANGAN' => $request->input('KETERANGAN'),
+    public function updateGabungInvoice(Request $request, string $noInvoice): JsonResponse
+    {
+        return $this->saveGroup($request, $noInvoice);
+    }
+
+    private function saveGroup(Request $request, ?string $existingGb): JsonResponse
+    {
+        try {
+            $data = $request->validate([
+                'nosj_list' => ['required', 'array', 'min:2'],
+                'nosj_list.*' => ['required', 'string'],
+                'no_invoice' => ['nullable', 'string', 'max:15'],
+                'item' => ['nullable', 'string', 'max:100'],
+                'harga' => ['required', 'numeric', 'min:0'],
+                'diskon' => ['nullable', 'numeric', 'between:0,100'],
+                'dc' => ['nullable', 'numeric', 'min:0'],
+                'ppn' => ['nullable', 'numeric', 'min:0'],
+                'grand_total' => ['nullable', 'numeric', 'min:0'],
+            ]);
+
+            $gb = DB::transaction(function () use ($data, $existingGb, $request) {
+                $rows = Expedisi::whereIn('NOSJ', $data['nosj_list'])
+                    ->where('JENIS', 'EKS')->lockForUpdate()->orderBy('NOSJ')->get();
+                if ($rows->count() !== count(array_unique($data['nosj_list']))) {
+                    throw new \RuntimeException('Sebagian Surat Jalan tidak ditemukan atau bukan expedisi.');
+                }
+
+                if ($existingGb) {
+                    Expedisi::where('GB', $existingGb)->lockForUpdate()->get()->each(function (Expedisi $row) {
+                        $row->update([
+                            'HARGA' => $row->hargaaw, 'NDISC' => $row->NDISCAW, 'DC' => $row->DCAW,
+                            'TOTAL' => 0, 'PPN' => 0, 'GRAND' => 0, 'PIUTANG' => 0,
+                            'GB' => null, 'PESANANGB' => null, 'STS' => null,
+                        ]);
+                    });
+                    $gb = $existingGb;
+                    // Re-read after rollback so backups come from the original SJ values,
+                    // not from the old group's master/detail overrides.
+                    $rows = Expedisi::whereIn('NOSJ', $data['nosj_list'])
+                        ->where('JENIS', 'EKS')->lockForUpdate()->orderBy('NOSJ')->get();
+                } else {
+                    $gb = $this->generateGB();
+                }
+
+                foreach ($rows as $row) {
+                    if ($row->INVOICE || ($row->GB && $row->GB !== $existingGb)) {
+                        throw new \RuntimeException("SJ {$row->NOSJ} sudah diproses atau tergabung di grup lain.");
+                    }
+                }
+                if ($rows->pluck('CUSTOMER_KODE')->filter()->unique()->count() > 1) {
+                    throw new \RuntimeException('SJ dari customer berbeda tidak dapat digabung.');
+                }
+                if ($rows->pluck('JENISHRG')->filter()->unique()->count() > 1) {
+                    throw new \RuntimeException('Jenis harga/pesanan harus sama untuk satu gabungan.');
+                }
+
+                $harga = (float) $data['harga'];
+                $diskon = (float) ($data['diskon'] ?? 0);
+                $dc = (float) ($data['dc'] ?? 0);
+                $ppn = (float) ($data['ppn'] ?? 11);
+                $ndisc = round($harga * $diskon / 100);
+                $total = max(0, round($harga - $ndisc + $dc));
+                $grand = round($total + ($total * $ppn / 100));
+
+                foreach ($rows as $index => $row) {
+                    $row->hargaaw = $row->HARGA;
+                    $row->NDISCAW = $row->NDISC;
+                    $row->DCAW = $row->DC;
+                    $row->GB = $gb;
+                    $row->PESANANGB = $data['item'] ?? $row->PESANAN;
+                    $row->STS = 'GABUNG';
+                    if ($index === 0) {
+                        $row->HARGA = $harga; $row->DISC = $diskon; $row->NDISC = $ndisc;
+                        $row->DC = $dc; $row->TOTAL = $total; $row->PPN = $ppn;
+                        $row->GRAND = $grand; $row->PIUTANG = $grand;
+                    } else {
+                        $row->HARGA = 0; $row->DISC = 0; $row->NDISC = 0; $row->DC = 0;
+                        $row->TOTAL = 0; $row->PPN = 0; $row->GRAND = 0; $row->PIUTANG = 0;
+                    }
+                    $row->USERINV = (string) ($request->user()->user_id ?? $request->user()->id) . '-' . now()->format('d-m-Y H:i:s');
+                    $row->save();
+                }
+                return $gb;
+            });
+
+            return response()->json(['status' => true, 'message' => 'Gabung SJ berhasil disimpan.', 'gb' => $gb]);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    private function generateGB(): string
+    {
+        $date = now()->format('Ymd');
+        $last = Expedisi::where('GB', 'like', $date . '%')->lockForUpdate()->orderByDesc('GB')->value('GB');
+        return $date . str_pad(((int) substr((string) $last, -4)) + 1, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function formatRow(Expedisi $row, int $index, bool $detail = false): array
+    {
+        return array_merge($row->toArray(), [
+            'DT_RowIndex' => $index,
+            'TGLMUAT' => $row->TGLMUAT?->format('d-m-Y') ?? '-',
+            'JUMLAH' => number_format((float) $row->JUMLAH, 0, ',', '.') . ' ' . ($row->UNIT ?? ''),
+            'harga_formatted' => 'Rp ' . number_format((float) $row->HARGA, 0, ',', '.'),
+            'dc_formatted' => 'Rp ' . number_format((float) $row->DC, 0, ',', '.'),
+            'gtotal_formatted' => 'Rp ' . number_format((float) $row->GRAND, 0, ',', '.'),
+            'total_formatted' => 'Rp ' . number_format((float) $row->GRAND, 0, ',', '.'),
+            'jumlahreal' => $row->JUMLAH,
         ]);
-
-        return redirect()->route('expedisi-invoice.index')
-            ->with('success', 'Invoice berhasil diperbarui.');
     }
 }

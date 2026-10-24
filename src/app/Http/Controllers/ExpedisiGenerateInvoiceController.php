@@ -39,7 +39,9 @@ class ExpedisiGenerateInvoiceController extends Controller
     public function getDataInvoiceGen()
     {
         $expedisis = Expedisi::where('JENIS', 'EKS')
-            ->whereNull('INVOICE')
+            ->where(function ($query) {
+                $query->whereNull('INVOICE')->orWhere('INVOICE', '');
+            })
             ->whereNotNull('NOSJ')
             ->get(['NOSJ', 'CUSTOMER', 'JUMLAH', 'HARGA', 'TOTAL', 'DISC', 'NDISCAW', 'GRAND', 'TGLMUAT']);
 
@@ -48,36 +50,58 @@ class ExpedisiGenerateInvoiceController extends Controller
 
     public function prosesInvoiceStore(Request $request)
     {
-        $noInvoice = $request->input('INVOICE') ?? now()->format('Ymd') . '-EKS-' . rand(1000, 9999);
-        $nosjList = $request->input('selected_sj', []);
+        $validated = $request->validate([
+            'INVOICE' => ['nullable', 'string', 'max:20', 'unique:arh,NOFAKTUR'],
+            'selected_sj' => ['required', 'array', 'min:1'],
+            'selected_sj.*' => ['required', 'string'],
+            'TGLFAKTUR' => ['nullable', 'date'],
+            'TGLJT' => ['nullable', 'date'],
+            'KETERANGAN' => ['nullable', 'string', 'max:500'],
+            'SALES' => ['nullable', 'string', 'max:50'],
+        ]);
+        $noInvoice = $validated['INVOICE'] ?? now()->format('Ymd') . '-EKS-' . random_int(1000, 9999);
 
-        $expedisis = Expedisi::whereIn('NOSJ', $nosjList)->where('JENIS', 'EKS')->get();
-
-        if ($expedisis->isEmpty()) {
-            return back()->with('error', 'Pilih minimal satu surat jalan.');
-        }
-
-        DB::transaction(function () use ($expedisis, $noInvoice, $request) {
-            $totalGrand = $expedisis->sum('GRAND');
-            $customer = $expedisis->first()->CUSTOMER;
+        DB::transaction(function () use ($validated, $noInvoice, $request) {
+            $picked = Expedisi::whereIn('NOSJ', $validated['selected_sj'])
+                ->where('JENIS', 'EKS')->lockForUpdate()->get();
+            if ($picked->count() !== count(array_unique($validated['selected_sj']))) {
+                throw new \RuntimeException('Surat Jalan tidak ditemukan.');
+            }
+            $group = $picked->first()->GB;
+            $expedisis = $group
+                ? Expedisi::where('GB', $group)->where('JENIS', 'EKS')->lockForUpdate()->get()
+                : $picked;
+            if ($expedisis->isEmpty() || $expedisis->contains(fn ($row) => filled($row->INVOICE))) {
+                throw new \RuntimeException('Surat Jalan sudah memiliki invoice atau tidak tersedia.');
+            }
+            $master = $expedisis->sortByDesc('GRAND')->first();
+            $totalGrand = (float) $master->GRAND;
+            $customer = $master->CUSTOMER;
+            $tanggal = $validated['TGLFAKTUR'] ?? now()->toDateString();
 
             $arh = Arh::create([
                 'NOFAKTUR' => $noInvoice,
-                'TGLFAKTUR' => $request->input('TGLFAKTUR') ?? now(),
-                'TGLJT' => $request->input('TGLJT'),
+                'TGLFAKTUR' => $tanggal,
+                'TGLJT' => $validated['TGLJT'] ?? null,
                 'CUSTOMER' => $customer,
-                'SALES' => $request->input('SALES'),
+                'SALES' => $validated['SALES'] ?? null,
                 'PIUTANG' => $totalGrand,
                 'BAYAR' => 0,
                 'SALDO' => $totalGrand,
-                'KETERANGAN' => $request->input('KETERANGAN'),
+                'DISCOUNT' => $master->NDISC,
+                'KETERANGAN' => $validated['KETERANGAN'] ?? null,
                 'STATUS' => 'OPEN',
                 'SOURCE' => 'Expedisi',
                 'USER' => $request->user()->name,
             ]);
 
-            $expedisis->each(function ($expedisi) use ($noInvoice) {
-                $expedisi->update(['INVOICE' => $noInvoice]);
+            $expedisis->each(function ($expedisi) use ($noInvoice, $validated) {
+                $expedisi->update([
+                    'INVOICE' => $noInvoice,
+                    'TGLINVOICE' => now()->toDateString(),
+                    'TGLJT' => $validated['TGLJT'] ?? null,
+                    'STS' => 'INVOICE',
+                ]);
             });
 
             $this->createJournal($arh, $totalGrand);
