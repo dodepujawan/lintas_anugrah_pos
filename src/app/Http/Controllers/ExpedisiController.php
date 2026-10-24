@@ -62,6 +62,77 @@ class ExpedisiController extends Controller
         return view('expedisi.create', compact('customers', 'kendaraans', 'drivers', 'rutes', 'ppnRate'));
     }
 
+    public function createMuat()
+    {
+        return view('expedisi.create_muat');
+    }
+
+    public function dataSJTersedia(Request $request)
+    {
+        $search = trim((string) $request->input('search'));
+        $suratJalan = Expedisi::query()
+            ->where('JENIS', 'EKS')
+            ->where(fn ($query) => $query->whereNull('NOMUAT')->orWhere('NOMUAT', ''))
+            ->where(fn ($query) => $query->whereNull('GB')->orWhere('GB', ''))
+            ->where(fn ($query) => $query->whereNull('INVOICE')->orWhere('INVOICE', ''))
+            ->when($search, fn ($query) => $query->where(fn ($q) => $q
+                ->where('NOSJ', 'like', "%{$search}%")
+                ->orWhere('CUSTOMER', 'like', "%{$search}%")
+                ->orWhere('rute', 'like', "%{$search}%")))
+            ->when($request->filled('date_from'), fn ($query) => $query->whereDate('tglsj', '>=', $request->input('date_from')))
+            ->when($request->filled('date_to'), fn ($query) => $query->whereDate('tglsj', '<=', $request->input('date_to')))
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate(15);
+
+        $suratJalan->getCollection()->transform(fn (Expedisi $row) => [
+            'id' => $row->id,
+            'NOSJ' => trim((string) $row->NOSJ),
+            'tglsj' => $row->tglsj?->format('Y-m-d'),
+            'CUSTOMER' => trim((string) $row->CUSTOMER),
+            'rute' => trim((string) $row->rute),
+            'JUMLAH' => (float) $row->JUMLAH,
+            'UNIT' => trim((string) $row->UNIT),
+            'HARGA' => (float) $row->HARGA,
+            'DISC' => (float) $row->DISC,
+            'DC' => (float) $row->DC,
+            'GRAND' => (float) $row->GRAND,
+        ]);
+
+        return response()->json($suratJalan);
+    }
+
+    public function showSurjal(Request $request)
+    {
+        $suratJalan = Expedisi::query()
+            ->whereKey($request->input('id'))
+            ->where('JENIS', 'EKS')
+            ->where(fn ($query) => $query->whereNull('NOMUAT')->orWhere('NOMUAT', ''))
+            ->where(fn ($query) => $query->whereNull('GB')->orWhere('GB', ''))
+            ->where(fn ($query) => $query->whereNull('INVOICE')->orWhere('INVOICE', ''))
+            ->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $suratJalan->id,
+                'no_sj' => trim((string) $suratJalan->NOSJ),
+                'tgl_sj' => $suratJalan->tglsj?->format('d-m-Y'),
+                'customer' => trim((string) $suratJalan->CUSTOMER),
+                'rute' => trim((string) $suratJalan->rute),
+                'jumlah' => (float) $suratJalan->JUMLAH,
+                'unit' => trim((string) $suratJalan->UNIT),
+                'jenis' => trim((string) $suratJalan->JENISHRG),
+                'harga' => (float) $suratJalan->HARGA,
+                'disc' => (float) $suratJalan->DISC,
+                'dc' => (float) $suratJalan->DC,
+                'ppn' => (float) $suratJalan->PPN,
+                'total' => (float) $suratJalan->GRAND,
+                'pengirim' => trim((string) $suratJalan->PENGIRIM),
+            ],
+        ]);
+    }
+
     public function dataItems(Request $request)
     {
         $customer = trim((string) $request->input('customer'));
@@ -133,7 +204,8 @@ class ExpedisiController extends Controller
         $vehicles = Kendaraan::query()
             ->when($search, fn ($query) => $query->where(function ($q) use ($search) {
                 $q->where('KODE', 'like', "%{$search}%")
-                    ->orWhere('NAMA', 'like', "%{$search}%");
+                    ->orWhere('NAMA', 'like', "%{$search}%")
+                    ->orWhere('PLAT', 'like', "%{$search}%");
             }))
             ->orderBy('KODE')
             ->paginate(10)
@@ -143,6 +215,7 @@ class ExpedisiController extends Controller
             'id' => $vehicle->id,
             'code' => $vehicle->KODE,
             'name' => $vehicle->NAMA,
+            'plat' => $vehicle->PLAT,
         ]);
 
         return response()->json($vehicles);
@@ -274,20 +347,284 @@ class ExpedisiController extends Controller
     {
         $rutes = \App\Models\Rute::query()
             ->when($kodedap, fn($q) => $q->where('FROM', $kodedap))
-            ->limit(50)
-            ->get(['FROM', 'TO', 'RUTE', 'HARGA']);
+            ->when($request->filled('search'), fn ($query) => $query->where('RUTE', 'like', '%'.$request->input('search').'%'))
+            ->orderBy('RUTE')
+            ->paginate(15, ['id', 'FROM', 'TO', 'RUTE', 'HARGA']);
 
         return response()->json($rutes);
     }
 
     public function getKmTerakhir(Request $request, $kendaraan = null)
     {
+        $kendaraan ??= $request->input('kendaraan');
         $km = Expedisi::query()
             ->where('KENDARAAN', $kendaraan)
-            ->orderBy('TGLMUAT', 'desc')
-            ->value('JUMLAH');
+            ->whereNotNull('KM_AKHIR')
+            ->orderByDesc('id')
+            ->value('KM_AKHIR');
 
-        return response()->json(['km_terakhir' => $km ?? 0]);
+        return response()->json(['km_terakhir' => (float) ($km ?? 0), 'km_akhir' => (float) ($km ?? 0)]);
+    }
+
+    public function getDataMuat(Request $request)
+    {
+        $search = trim((string) $request->input('search'));
+        $muatan = Expedisi::query()
+            ->where('JENIS', 'EKS')
+            ->whereNotNull('NOMUAT')
+            ->where('NOMUAT', '!=', '')
+            ->where(fn ($query) => $query->whereNull('INVOICE')->orWhere('INVOICE', ''))
+            ->where(fn ($query) => $query->whereNull('GB')->orWhere('GB', ''))
+            ->when($search, fn ($query) => $query->where(fn ($q) => $q
+                ->where('NOMUAT', 'like', "%{$search}%")
+                ->orWhere('CUSTOMER', 'like', "%{$search}%")
+                ->orWhere('rute', 'like', "%{$search}%")
+                ->orWhere('NOSJ', 'like', "%{$search}%")))
+            ->when($request->filled('date_from'), fn ($query) => $query->whereDate('TGLMUAT', '>=', $request->input('date_from')))
+            ->when($request->filled('date_to'), fn ($query) => $query->whereDate('TGLMUAT', '<=', $request->input('date_to')))
+            ->selectRaw('MIN(id) as id, NOMUAT')
+            ->groupBy('NOMUAT')
+            ->orderByDesc(DB::raw('MAX(TGLMUAT)'))
+            ->paginate(15);
+
+        $muatan->getCollection()->transform(function ($row) {
+            $first = Expedisi::query()->where('NOMUAT', $row->NOMUAT)->orderBy('id')->first();
+
+            return [
+                'id' => $first?->id,
+                'NOMUAT' => trim((string) $row->NOMUAT),
+                'TGLMUAT' => $first?->TGLMUAT?->format('Y-m-d'),
+                'CUSTOMER' => trim((string) ($first?->CUSTOMER ?? '')),
+                'rute' => trim((string) ($first?->rute ?? '')),
+                'NOSJ' => trim((string) ($first?->NOSJ ?? '')),
+                'JUMLAH' => (float) ($first?->JUMLAH ?? 0),
+                'UNIT' => trim((string) ($first?->UNIT ?? '')),
+                'HARGA' => (float) ($first?->HARGA ?? 0),
+                'DISC' => (float) ($first?->DISC ?? 0),
+                'DC' => (float) ($first?->DC ?? 0),
+                'GRAND' => (float) ($first?->GRAND ?? 0),
+            ];
+        });
+
+        return response()->json($muatan);
+    }
+
+    public function showMuat(Request $request)
+    {
+        $nomuat = trim((string) $request->input('nomuat'));
+        abort_if($nomuat === '', 422, 'No Muat wajib dipilih.');
+
+        $rows = Expedisi::query()
+            ->where('NOMUAT', $nomuat)
+            ->where('JENIS', 'EKS')
+            ->where(fn ($query) => $query->whereNull('INVOICE')->orWhere('INVOICE', ''))
+            ->where(fn ($query) => $query->whereNull('GB')->orWhere('GB', ''))
+            ->orderByDesc('id')
+            ->get();
+
+        abort_if($rows->isEmpty(), 404, 'Data No Muat tidak ditemukan.');
+
+        return response()->json([
+            'success' => true,
+            'nomuat' => $nomuat,
+            'data' => $rows->map(fn (Expedisi $row) => [
+                'id' => $row->id,
+                'nomuat' => trim((string) $row->NOMUAT),
+                'tglmuat' => $row->TGLMUAT?->format('Y-m-d'),
+                'rute' => trim((string) $row->rute),
+                'plat_nomor' => trim((string) $row->PLAT_NOMOR),
+                'driver1_kode' => trim((string) $row->DRIVER),
+                'driver1' => trim((string) $row->NAMA_DRIVER),
+                'driver2_kode' => trim((string) $row->DRIVER2),
+                'driver2' => trim((string) $row->NAMA_DRIVER2),
+                'kendaraan_kode' => trim((string) $row->KENDARAAN),
+                'kendaraan' => trim((string) $row->NAMA_KENDARAAN),
+                'km_awal' => (float) $row->KM_AWAL,
+                'km_akhir' => (float) $row->KM_AKHIR,
+                'uang_jalan' => (float) $row->UANG_JALAN,
+                'uang_driver_makan' => (float) $row->UANG_DRIVER_MAKAN,
+                'uang_lain_lain' => (float) $row->UANG_LAIN_LAIN,
+                'pengirim' => trim((string) $row->PENGIRIM),
+                'nosj' => trim((string) $row->NOSJ),
+                'tgl_sj' => $row->tglsj?->format('d-m-Y'),
+                'customer' => trim((string) $row->CUSTOMER),
+                'dc' => (float) $row->DC,
+                'jumlah' => (float) $row->JUMLAH,
+                'unit' => trim((string) $row->UNIT),
+                'jenis' => trim((string) $row->JENIS),
+                'jenishrg' => trim((string) $row->JENISHRG),
+                'harga' => (float) $row->HARGA,
+                'disc' => (float) $row->DISC,
+                'ppn' => (float) $row->PPN,
+                'total' => (float) $row->GRAND,
+            ]),
+        ]);
+    }
+
+    public function storeMuat(Request $request)
+    {
+        $data = $request->validate([
+            'nosj' => ['required', 'array', 'min:1'],
+            'nosj.*' => ['required', 'string', 'max:20'],
+            'tglmuat' => ['required', 'date'],
+            'rute' => ['nullable', 'string', 'max:30'],
+            'plat_nomor' => ['nullable', 'string', 'max:30'],
+            'driver1_kode' => ['nullable', 'string', 'max:20'],
+            'driver1' => ['nullable', 'string', 'max:50'],
+            'driver2_kode' => ['nullable', 'string', 'max:20'],
+            'driver2' => ['nullable', 'string', 'max:50'],
+            'kendaraan_kode' => ['nullable', 'string', 'max:20'],
+            'kendaraan' => ['nullable', 'string', 'max:50'],
+            'km_awal' => ['nullable', 'numeric', 'min:0'],
+            'km_akhir' => ['nullable', 'numeric', 'min:0', 'gte:km_awal'],
+            'uang_jalan' => ['nullable', 'numeric', 'min:0'],
+            'uang_driver_makan' => ['nullable', 'numeric', 'min:0'],
+            'uang_lain_lain' => ['nullable', 'numeric', 'min:0'],
+            'pengirim' => ['nullable', 'array'],
+            'pengirim.*.nosj' => ['required_with:pengirim', 'string', 'max:20'],
+            'pengirim.*.pengirim' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $nomuat = DB::transaction(function () use ($data) {
+            $rows = Expedisi::query()->whereIn('NOSJ', $data['nosj'])->lockForUpdate()->get();
+            abort_if($rows->count() !== count(array_unique($data['nosj'])), 422, 'Sebagian Surat Jalan tidak ditemukan.');
+            abort_if($rows->contains(fn (Expedisi $row) => $row->JENIS !== 'EKS' || trim((string) $row->NOMUAT) !== '' || trim((string) $row->INVOICE) !== '' || trim((string) $row->GB) !== ''), 422, 'Surat Jalan sudah dimuat, tergabung, atau diinvoice. Muat ulang daftar SJ.');
+
+            $nomuat = $this->generateNomuatWithLock();
+            $header = $this->muatHeaderValues($data, $nomuat, $this->generateNoJalan());
+            Expedisi::query()->whereIn('NOSJ', $data['nosj'])->update($header);
+            $this->savePengirim($data['pengirim'] ?? [], $data['nosj']);
+
+            return $nomuat;
+        });
+
+        return response()->json(['status' => true, 'message' => 'No Muat berhasil disimpan.', 'nomuat' => $nomuat]);
+    }
+
+    public function updateMuat(Request $request, string $nomuat)
+    {
+        $data = $request->validate([
+            'nosj' => ['required', 'array', 'min:1'],
+            'nosj.*' => ['required', 'string', 'max:20'],
+            'tglmuat' => ['required', 'date'],
+            'rute' => ['nullable', 'string', 'max:30'],
+            'plat_nomor' => ['nullable', 'string', 'max:30'],
+            'driver1_kode' => ['nullable', 'string', 'max:20'],
+            'driver1' => ['nullable', 'string', 'max:50'],
+            'driver2_kode' => ['nullable', 'string', 'max:20'],
+            'driver2' => ['nullable', 'string', 'max:50'],
+            'kendaraan_kode' => ['nullable', 'string', 'max:20'],
+            'kendaraan' => ['nullable', 'string', 'max:50'],
+            'km_awal' => ['nullable', 'numeric', 'min:0'],
+            'km_akhir' => ['nullable', 'numeric', 'min:0', 'gte:km_awal'],
+            'uang_jalan' => ['nullable', 'numeric', 'min:0'],
+            'uang_driver_makan' => ['nullable', 'numeric', 'min:0'],
+            'uang_lain_lain' => ['nullable', 'numeric', 'min:0'],
+            'pengirim' => ['nullable', 'array'],
+            'pengirim.*.nosj' => ['required_with:pengirim', 'string', 'max:20'],
+            'pengirim.*.pengirim' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        DB::transaction(function () use ($data, $nomuat) {
+            $existingRows = Expedisi::query()->where('NOMUAT', $nomuat)->lockForUpdate()->get();
+            abort_if($existingRows->isEmpty(), 404, 'No Muat tidak ditemukan.');
+            abort_if($existingRows->contains(fn (Expedisi $row) => trim((string) $row->INVOICE) !== '' || trim((string) $row->GB) !== ''), 422, 'No Muat yang sudah tergabung atau diinvoice tidak dapat diedit.');
+
+            $submittedRows = Expedisi::query()->whereIn('NOSJ', $data['nosj'])->lockForUpdate()->get();
+            abort_if($submittedRows->count() !== count(array_unique($data['nosj'])), 422, 'Sebagian Surat Jalan tidak ditemukan.');
+            abort_if($submittedRows->contains(fn (Expedisi $row) => $row->JENIS !== 'EKS' || (trim((string) $row->NOMUAT) !== '' && trim((string) $row->NOMUAT) !== $nomuat) || trim((string) $row->INVOICE) !== '' || trim((string) $row->GB) !== ''), 422, 'Surat Jalan yang dipilih sudah terikat ke transaksi lain.');
+
+            $existingNosj = $existingRows->pluck('NOSJ')->map(fn ($value) => trim((string) $value))->all();
+            $removedNosj = array_diff($existingNosj, $data['nosj']);
+            if ($removedNosj) {
+                Expedisi::query()->whereIn('NOSJ', $removedNosj)->update([
+                    'NOMUAT' => null, 'TGLMUAT' => null,
+                    'rute' => null, 'PLAT_NOMOR' => null, 'DRIVER' => null, 'NAMA_DRIVER' => null,
+                    'DRIVER2' => null, 'NAMA_DRIVER2' => null, 'KENDARAAN' => null, 'NAMA_KENDARAAN' => null,
+                    'KM_AWAL' => null, 'KM_AKHIR' => null, 'UANG_JALAN' => null,
+                    'UANG_DRIVER_MAKAN' => null, 'UANG_LAIN_LAIN' => null,
+                    'updated_at' => now(),
+                ]);
+            }
+
+            Expedisi::query()->whereIn('NOSJ', $data['nosj'])->update($this->muatHeaderValues($data, $nomuat, $existingRows->first()->NOJALAN));
+            $this->savePengirim($data['pengirim'] ?? [], $data['nosj']);
+        });
+
+        return response()->json(['status' => true, 'message' => 'No Muat berhasil diperbarui.', 'nomuat' => $nomuat]);
+    }
+
+    public function destroyMuat(string $nomuat)
+    {
+        DB::transaction(function () use ($nomuat) {
+            $rows = Expedisi::query()->where('NOMUAT', $nomuat)->lockForUpdate()->get();
+            abort_if($rows->isEmpty(), 404, 'No Muat tidak ditemukan.');
+            abort_if($rows->contains(fn (Expedisi $row) => trim((string) $row->INVOICE) !== '' || trim((string) $row->GB) !== ''), 422, 'Muatan tidak bisa dibatalkan karena sudah tergabung atau sudah invoice.');
+
+            Expedisi::query()->where('NOMUAT', $nomuat)->update([
+                'NOMUAT' => null, 'TGLMUAT' => null, 'NOJALAN' => null,
+                'rute' => null, 'PLAT_NOMOR' => null, 'DRIVER' => null, 'NAMA_DRIVER' => null,
+                'DRIVER2' => null, 'NAMA_DRIVER2' => null, 'KENDARAAN' => null, 'NAMA_KENDARAAN' => null,
+                'KM_AWAL' => null, 'KM_AKHIR' => null, 'UANG_JALAN' => null,
+                'UANG_DRIVER_MAKAN' => null, 'UANG_LAIN_LAIN' => null, 'PENGIRIM' => null,
+                'updated_at' => now(),
+            ]);
+        });
+
+        return response()->json(['success' => true, 'message' => 'No Muat berhasil dibatalkan.']);
+    }
+
+    private function muatHeaderValues(array $data, string $nomuat, ?string $nojalan): array
+    {
+        return [
+            'NOMUAT' => $nomuat,
+            'TGLMUAT' => $data['tglmuat'],
+            'NOJALAN' => $nojalan,
+            'rute' => $data['rute'] ?? null,
+            'PLAT_NOMOR' => $data['plat_nomor'] ?? null,
+            'DRIVER' => $data['driver1_kode'] ?? null,
+            'NAMA_DRIVER' => $data['driver1'] ?? null,
+            'DRIVER2' => $data['driver2_kode'] ?? null,
+            'NAMA_DRIVER2' => $data['driver2'] ?? null,
+            'KENDARAAN' => $data['kendaraan_kode'] ?? null,
+            'NAMA_KENDARAAN' => $data['kendaraan'] ?? null,
+            'KM_AWAL' => $data['km_awal'] ?? null,
+            'KM_AKHIR' => $data['km_akhir'] ?? null,
+            'UANG_JALAN' => $data['uang_jalan'] ?? 0,
+            'UANG_DRIVER_MAKAN' => $data['uang_driver_makan'] ?? 0,
+            'UANG_LAIN_LAIN' => $data['uang_lain_lain'] ?? 0,
+            'updated_at' => now(),
+        ];
+    }
+
+    private function savePengirim(array $pengirim, array $nosjList): void
+    {
+        foreach ($pengirim as $item) {
+            if (in_array($item['nosj'] ?? null, $nosjList, true)) {
+                Expedisi::query()->where('NOSJ', $item['nosj'])->update([
+                    'PENGIRIM' => $item['pengirim'] ?? null,
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+    }
+
+    private function generateNomuatWithLock(): string
+    {
+        $prefix = 'MU'.now()->format('my');
+        $last = Expedisi::query()->where('NOMUAT', 'like', $prefix.'%')->lockForUpdate()->orderByDesc('NOMUAT')->value('NOMUAT');
+        $next = $last ? ((int) substr($last, -5)) + 1 : 1;
+
+        return $prefix.str_pad((string) $next, 5, '0', STR_PAD_LEFT);
+    }
+
+    private function generateNoJalan(): string
+    {
+        $prefix = 'PJ'.now()->format('my');
+        $last = Expedisi::query()->where('NOJALAN', 'like', $prefix.'%')->lockForUpdate()->orderByDesc('NOJALAN')->value('NOJALAN');
+        $next = $last ? ((int) substr($last, -5)) + 1 : 1;
+
+        return $prefix.str_pad((string) $next, 5, '0', STR_PAD_LEFT);
     }
 
     private function suratJalanRules(): array
@@ -410,9 +747,15 @@ class ExpedisiController extends Controller
 
     public function pdfMuat(Request $request, $nomuat = null)
     {
-        $expedisis = Expedisi::where('NOSJ', 'like', "%{$request->input('nosj_filter', '')}%")
-            ->whereNotNull('NOSJ')
+        $expedisis = Expedisi::query()
+            ->when($nomuat, fn ($query) => $query->where('NOMUAT', $nomuat))
+            ->when(! $nomuat, fn ($query) => $query->where('NOSJ', 'like', '%'.$request->input('nosj_filter', '').'%')->whereNotNull('NOSJ'))
+            ->orderBy('id')
             ->get();
+
+        foreach ($expedisis as $expedisi) {
+            $expedisi->PLAT = Kendaraan::query()->where('KODE', $expedisi->KENDARAAN)->value('PLAT');
+        }
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('expedisi.pdf.muat', compact('expedisis'));
 

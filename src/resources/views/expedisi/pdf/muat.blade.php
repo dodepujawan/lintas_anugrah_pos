@@ -85,7 +85,7 @@
                 <tr>
                     <td class="text-center">{{ $i + 1 }}</td>
                     <td>{{ $row->NOSJ ?? '' }}</td>
-                    <td>{{ $row->CUSTOMER ?? '' }}</td>
+                    <td>{{ $row->PENGIRIM ?? $row->CUSTOMER ?? '' }}</td>
                     <td class="text-end">{{ number_format((float) ($row->JUMLAH ?? 0), 0, ',', '.') }}</td>
                 </tr>
             @endforeach

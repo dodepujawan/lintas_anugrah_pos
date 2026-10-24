@@ -579,6 +579,20 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
         ->name('expedisi.data.vehicles');
     Route::get('expedisi/preview/no-sj', [ExpedisiController::class, 'previewNoSuratJalan'])
         ->name('expedisi.preview.no-sj');
+    Route::get('/expedisi/tambah-muat', [ExpedisiController::class, 'createMuat'])->name('expedisi.create-muat');
+    Route::get('/expedisi/data-sj-tersedia', [ExpedisiController::class, 'dataSJTersedia'])->name('expedisi.data-sj-tersedia');
+    Route::get('/expedisi/surjal/show', [ExpedisiController::class, 'showSurjal'])->name('expedisi.surjal.show');
+
+    // Tambahan rute muat agar persis dengan src_old
+    Route::get('/expedisi/data-muat-list', [ExpedisiController::class, 'getDataMuat'])->name('expedisi.dataMuat');
+    Route::get('/expedisi/show-muat', [ExpedisiController::class, 'showMuat'])->name('expedisi.showMuat');
+    Route::post('/expedisi/store-muat', [ExpedisiController::class, 'storeMuat'])->name('expedisi.storeMuat');
+    Route::post('/expedisi/update-muat/{nomuat}', [ExpedisiController::class, 'updateMuat'])->name('expedisi.updateMuat');
+    Route::delete('/expedisi/muat/{nomuat}', [ExpedisiController::class, 'destroyMuat'])->name('expedisi.destroyMuat');
+    Route::get('/expedisi/pdf-muat/{nomuat}', [ExpedisiController::class, 'pdfMuat'])->name('expedisi.pdfMuat');
+    Route::get('/expedisi/rute-muat', [ExpedisiController::class, 'getRuteMuat'])->name('expedisi.rute-muat');
+
+    Route::get('/expedisi/data-km', [ExpedisiController::class, 'getKmTerakhir'])->name('expedisi.dataKm');
     Route::resource('expedisi', ExpedisiController::class);
     Route::get('expedisi/print/surjal/{expedisi}', [ExpedisiController::class, 'printSuratJalan'])
         ->name('expedisi.print.surjal');

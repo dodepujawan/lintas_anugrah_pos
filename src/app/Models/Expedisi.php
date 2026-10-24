@@ -13,10 +13,11 @@ class Expedisi extends Model
     protected $table = 'expedisis';
 
     protected $fillable = [
-        'NOMUAT', 'TGLMUAT', 'TGLPO', 'NOPO', 'NOSJ', 'NOJALAN', 'tglsj',
+        'NOMUAT', 'TGLMUAT', 'TGLPO', 'NOPO', 'NOSJ', 'NOJALAN', 'tglsj', 'PLAT_NOMOR',
         'KET_SJ', 'TGLINVOICE', 'INVOICE', 'CUSTOMER_KODE', 'CUSTOMER',
         'KENDARAAN', 'NAMA_KENDARAAN', 'DRIVER', 'NAMA_DRIVER', 'KET_DRIVER',
         'DRIVER2', 'NAMA_DRIVER2', 'KET_DRIVER2',
+        'KM_AWAL', 'KM_AKHIR', 'UANG_JALAN', 'UANG_DRIVER_MAKAN', 'UANG_LAIN_LAIN', 'PENGIRIM',
         'barang', 'penyimpanan', 'koli', 'catatan',
         'UT', 'KET_UT', 'PESANAN', 'PESANANGB', 'GB', 'rute', 'RUTE2',
         'JUMLAH', 'UNIT', 'HARGA', 'hargaaw', 'JENISHRG', 'VOL', 'type',

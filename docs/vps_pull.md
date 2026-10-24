@@ -4,4 +4,6 @@ php artisan optimize:clear
 php artisan migrate                     # → jalankan semua migration baru
 php artisan db:seed --class=TransaksiPermissionSeeder  # → assign sidebar permission
 
+composer install
+
 # Buka browser → login → sidebar muncul semua menu ✓

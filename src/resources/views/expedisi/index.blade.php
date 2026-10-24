@@ -8,6 +8,9 @@
             <p class="text-muted small mb-0">Daftar surat jalan ekspedisi</p>
         </div>
         <div class="col-auto">
+            <a href="{{ route('expedisi.create-muat') }}" id="btnTambahMuat" class="btn btn-warning btn-sm">
+                <i class="bi bi-plus-circle"></i> Tambah Muat
+            </a>
             <a href="{{ route('expedisi.print.muat') }}" id="btnPrintMuatExpedisi" data-debug="transaksiExpedisiPrintMuat" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-file-pdf"></i> Print Muat
             </a>
