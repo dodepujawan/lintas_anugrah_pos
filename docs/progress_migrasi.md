@@ -302,6 +302,8 @@ $ php artisan test --filter=Transaksi
 
 | 2026-10-21 08:15 | Audit: Price Rent / Price Dingin migration | CRUD dasar `src` tersedia, tetapi belum setara dengan `src_old`: belum ada lookup kendaraan/modal Alpine, belum generate `KODEDGN`/`TANGGAL`/`KUNCI`, belum derive `JENIS` dari kendaraan, belum sync master ke semua `pricedingincus`, index belum menampilkan nama kendaraan, search belum mencakup PLAT/ITEM/PERIODE/JENIS, dan resource binding `{price_rent}` belum konsisten dengan `Pricedingin $price`. Backlog ini dicatat di `docs/prompt_to_ai.md`; implementasi berikutnya tetap MVC + Alpine/full reload. | Audit selesai, implementasi belum dimulai |
 
+| 2026-10-25 13:10 | Kwitansi Expedisi: ikuti src_old | Proses kwitansi per invoice sama seperti src_old: mengisi `expedisis.kwt`/`TGLKW` dan insert `kwitansi` (nilai = GRAND). Batal kwitansi mereset `expedisis` dan menghapus `kwitansi`. Arh hanya dibaca untuk PDF/print, tidak diubah. Tidak ada barh dan jurnal (mengikuti src_old; akuntansi akan ditentukan kemudian). Index: filter Belum/Sudah, Proses/Print/PDF/Batal. Print langsung ESC/P ke Electron (`expedisi-kwitansi.text`), pola sama dengan `expedisi-invoice/show`. | 13/13 tests pass, belum diuji di browser/printer |
+
 | 2026-10-21 11:20 | Implementasi Price Rent Customer | `price-rent-customer/index` diubah menjadi daftar customer; ditambahkan detail customer, info customer, `Update Harga Sewa`, inline edit HARGA, route/controller `customer-prices`, `update-all`, dan `update-row`. Resource binding memakai `{pricedingincus}`; stack tetap MVC + Alpine tanpa DataTables. | Blade compile OK, 13/13 tests pass |
 
 ## 📊 Migration File Status (untuk user)

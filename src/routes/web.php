@@ -642,13 +642,13 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     */
     Route::get('expedisi-kwitansi', [ExpedisiKwitansiController::class, 'index'])
         ->name('expedisi-kwitansi.index');
-    Route::get('expedisi-kwitansi/create', [ExpedisiKwitansiController::class, 'index'])
-        ->name('expedisi-kwitansi.create');
     Route::post('expedisi-kwitansi/proses', [ExpedisiKwitansiController::class, 'prosesKwitansi'])
         ->name('expedisi-kwitansi.proses');
-    Route::delete('expedisi-kwitansi/{kwitansi}', [ExpedisiKwitansiController::class, 'deleteKwitansi'])
+    Route::post('expedisi-kwitansi/destroy', [ExpedisiKwitansiController::class, 'deleteKwitansi'])
         ->name('expedisi-kwitansi.destroy');
-    Route::get('expedisi-kwitansi/{kwitansi}/print', [ExpedisiKwitansiController::class, 'printKwitansi'])
+    Route::get('expedisi-kwitansi/{noKwt}/text', [ExpedisiKwitansiController::class, 'printKwitansiText'])
+        ->name('expedisi-kwitansi.text');
+    Route::get('expedisi-kwitansi/{noKwt}/print', [ExpedisiKwitansiController::class, 'printKwitansi'])
         ->name('expedisi-kwitansi.printKwitansi');
 
     Route::get('expedisi-invoice-gen', [ExpedisiGenerateInvoiceController::class, 'indexEdit'])
