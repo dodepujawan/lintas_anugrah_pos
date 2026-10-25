@@ -1,17 +1,17 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid" data-debug="transaksiExpedisiIndex">
 <div class="row mb-3" data-debug="transaksiExpedisiHeader">
         <div class="col">
             <h1 class="page-title mb-1">Ekspedisi (EKS)</h1>
             <p class="text-muted small mb-0">Daftar surat jalan ekspedisi</p>
         </div>
         <div class="col-auto">
-            <a href="{{ route('expedisi.create-muat') }}" id="btnTambahMuat" class="btn btn-warning btn-sm">
+            <a href="{{ route('expedisi.create-muat') }}" id="btnTambahMuat" data-debug="transaksiExpedisiCreateMuatBtn" class="btn btn-warning btn-sm">
                 <i class="bi bi-plus-circle"></i> Tambah Muat
             </a>
-            <a href="{{ route('expedisi.print.muat') }}" id="btnPrintMuatExpedisi" data-debug="transaksiExpedisiPrintMuat" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ route('expedisi.print.muat') }}" id="btnPrintMuatExpedisi" data-debug="transaksiExpedisiPrintMuatBtn" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-file-pdf"></i> Print Muat
             </a>
             <a href="{{ route('expedisi.create') }}" id="btnTambahExpedisi" data-debug="transaksiExpedisiCreateBtn" class="btn btn-primary btn-sm">
@@ -23,22 +23,22 @@
     <form method="GET" id="formFilterExpedisi" data-debug="transaksiExpedisiFilter" class="mb-3">
         <div class="row g-2">
             <div class="col-md-4">
-                <input type="text" name="search" class="form-control form-control-sm"
+                <input type="text" name="search" data-debug="transaksiExpedisiFilterSearch" class="form-control form-control-sm"
                        placeholder="Cari NOSJ / Invoice / Customer..." value="{{ request('search') }}">
             </div>
             <div class="col-md-2">
-                <input type="date" name="date" class="form-control form-control-sm"
+                <input type="date" name="date" data-debug="transaksiExpedisiFilterDate" class="form-control form-control-sm"
                        value="{{ request('date') }}">
             </div>
             <div class="col-md-2">
-                <select name="status" class="form-select form-select-sm">
+                <select name="status" data-debug="transaksiExpedisiFilterStatus" class="form-select form-select-sm">
                     <option value="">Semua Status</option>
                     <option value="OPEN" {{ request('status') == 'OPEN' ? 'selected' : '' }}>OPEN</option>
                     <option value="CLOSE" {{ request('status') == 'CLOSE' ? 'selected' : '' }}>CLOSE</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-sm btn-primary w-100">Filter</button>
+                <button type="submit" data-debug="transaksiExpedisiFilterSubmit" class="btn btn-sm btn-primary w-100">Filter</button>
             </div>
             <div class="col-md-2 text-end">
                 <a href="{{ route('expedisi.index') }}" class="btn btn-sm btn-outline-secondary w-100">Reset</a>
@@ -71,21 +71,21 @@
                         <td>{{ $e->NAMA_KENDARAAN ?? $e->KENDARAAN }}</td>
                         <td class="text-end">{{ number_format((float) $e->GRAND, 0, ',', '.') }}</td>
                         <td class="font-monospace">{{ $e->INVOICE ?? '-' }}</td>
-                        <td class="text-end">
+                        <td class="text-end" data-debug="transaksiExpedisiActions_{{ $e->NOSJ }}">
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ route('expedisi.print.surjal', $e) }}" class="btn btn-outline-primary" title="Print SJ">
+                                <a href="{{ route('expedisi.print.surjal', $e) }}" data-debug="transaksiExpedisiPrintSJ_{{ $e->NOSJ }}" class="btn btn-outline-primary" title="Print SJ">
                                     <i class="bi bi-printer"></i>
                                 </a>
-                                <a href="{{ route('expedisi.show', $e) }}" class="btn btn-outline-secondary" title="Detail">
+                                <a href="{{ route('expedisi.show', $e) }}" data-debug="transaksiExpedisiDetail_{{ $e->NOSJ }}" class="btn btn-outline-secondary" title="Detail">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{{ route('expedisi.edit', $e) }}" class="btn btn-outline-warning" title="Edit">
+                                <a href="{{ route('expedisi.edit', $e) }}" data-debug="transaksiExpedisiEdit_{{ $e->NOSJ }}" class="btn btn-outline-warning" title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form action="{{ route('expedisi.destroy', $e) }}" method="POST"
+                                <form action="{{ route('expedisi.destroy', $e) }}" method="POST" data-debug="transaksiExpedisiDeleteForm_{{ $e->NOSJ }}"
                                       onsubmit="return confirm('Hapus ekspedisi ini? Data yang sudah diinvoice tidak bisa dihapus.')">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger" title="Hapus">
+                                    <button type="submit" data-debug="transaksiExpedisiDelete_{{ $e->NOSJ }}" class="btn btn-outline-danger" title="Hapus">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>

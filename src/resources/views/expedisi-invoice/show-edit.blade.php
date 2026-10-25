@@ -28,6 +28,8 @@
             </ul>
         </div>
         @endif
+        @if (session('error'))<div class="alert alert-danger" role="alert">{{ session('error') }}</div>@endif
+        @if (session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif
 
         <div class="card mb-3">
             <div class="card-header"><h6 class="mb-0">Informasi Invoice</h6></div>
@@ -39,19 +41,19 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Tgl Invoice</label>
-                        <input type="date" name="TGLFAKTUR" data-debug="transaksiExpedisiInvoiceEdit_TGLFAKTUR" class="form-control form-control-sm" value="{{ $invoice->TGLFAKTUR?->format('Y-m-d') }}">
+                        <input type="date" name="TGLFAKTUR" data-debug="transaksiExpedisiInvoiceEdit_TGLFAKTUR" class="form-control form-control-sm" value="{{ old('TGLFAKTUR', $invoice->TGLFAKTUR?->format('Y-m-d')) }}" required>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Tgl Jatuh Tempo</label>
-                        <input type="date" name="TGLJT" data-debug="transaksiExpedisiInvoiceEdit_TGLJT" class="form-control form-control-sm" value="{{ $invoice->TGLJT?->format('Y-m-d') }}">
+                        <input type="date" name="TGLJT" data-debug="transaksiExpedisiInvoiceEdit_TGLJT" class="form-control form-control-sm" value="{{ old('TGLJT', $invoice->TGLJT?->format('Y-m-d')) }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Customer</label>
-                        <input type="text" name="CUSTOMER" data-debug="transaksiExpedisiInvoiceEdit_CUSTOMER" class="form-control form-control-sm" value="{{ $invoice->CUSTOMER }}">
+                        <input type="text" data-debug="transaksiExpedisiInvoiceEdit_CUSTOMER" class="form-control form-control-sm" value="{{ $invoice->CUSTOMER }}" readonly>
                     </div>
                     <div class="col-md-12">
                         <label class="form-label">Keterangan</label>
-                        <textarea name="KETERANGAN" data-debug="transaksiExpedisiInvoiceEdit_KETERANGAN" class="form-control form-control-sm" rows="2">{{ $invoice->KETERANGAN }}</textarea>
+                        <textarea name="KETERANGAN" data-debug="transaksiExpedisiInvoiceEdit_KETERANGAN" class="form-control form-control-sm" rows="2">{{ old('KETERANGAN', $invoice->KETERANGAN) }}</textarea>
                     </div>
                 </div>
             </div>

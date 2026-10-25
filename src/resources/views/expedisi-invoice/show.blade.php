@@ -40,7 +40,7 @@
                         <tr><th>Piutang</th><td class="text-end">{{ number_format((float) $invoice->PIUTANG, 0, ',', '.') }}</td></tr>
                         <tr><th>Bayar</th><td class="text-end">{{ number_format((float) $invoice->BAYAR, 0, ',', '.') }}</td></tr>
                         <tr><th>Discount</th><td class="text-end">{{ number_format((float) $invoice->DISCOUNT, 0, ',', '.') }}</td></tr>
-                        <tr><th>Saldo</th><td class="text-end fw-bold">{{ number_format((float) $invoice->SALDO, 0, ',', '.') }}</td></tr>
+                        <tr><th>Sisa Piutang</th><td class="text-end fw-bold">{{ number_format(max(0, (float) $invoice->SALDO - (float) $invoice->BAYAR), 0, ',', '.') }}</td></tr>
                         <tr><th>Status</th><td>{{ $invoice->STATUS }}</td></tr>
                     </table>
                 </div>

@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
-    <form id="formExpedisiCreate" method="POST" action="{{ route('expedisi.store') }}">
+<div class="container-fluid" data-debug="transaksiExpedisiCreate">
+    <form id="formExpedisiCreate" data-debug="transaksiExpedisiCreateForm" method="POST" action="{{ route('expedisi.store') }}">
         @csrf
         @include('expedisi._form', ['expedisi' => null])
     </form>

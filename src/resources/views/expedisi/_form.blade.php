@@ -13,7 +13,7 @@
             <h1 class="page-title mb-1">{{ $editing ? 'Edit' : 'Tambah' }} Surat Jalan Expedisi</h1>
             <p class="text-muted small mb-0">Input transaksi Surat Jalan. Proses No Muat dikerjakan terpisah.</p>
         </div>
-        <div class="col-auto d-flex align-items-center gap-2"><span x-show="saved" class="badge bg-success"><i class="bi bi-check-circle"></i> Tersimpan</span><a href="{{ route('expedisi.index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Kembali ke List SJ</a></div>
+        <div class="col-auto d-flex align-items-center gap-2"><span x-show="saved" class="badge bg-success"><i class="bi bi-check-circle"></i> Tersimpan</span><a href="{{ route('expedisi.index') }}" data-debug="transaksiExpedisiCreateCancel" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Kembali ke List SJ</a></div>
     </div>
 
     @if ($errors->any())
@@ -72,10 +72,10 @@
     <input type="hidden" name="JENIS" value="EKS"><input type="hidden" name="type" value="E"><input type="hidden" name="hargaaw" x-model="price"><input type="hidden" name="DCAW" x-model="deliveryCharge"><input type="hidden" name="STS" value="INVOICE"><input type="hidden" name="SIMPAN" value="N"><input type="hidden" name="READY" value="Y"><input type="hidden" name="CLOSSING" value="N"><input type="hidden" name="KETERANGAN" value="EXPEDISI BARU">
 
     <div class="d-flex gap-2 justify-content-end mb-3">
-        <button type="submit" class="btn btn-success" :disabled="saving"><i class="bi" :class="saving ? 'bi-hourglass-split' : (saved ? 'bi-arrow-repeat' : 'bi-save')"></i> <span x-text="saved ? 'Update Surat Jalan' : 'Simpan Surat Jalan'"></span></button>
+        <button type="submit" data-debug="transaksiExpedisiCreateSave" class="btn btn-success" :disabled="saving"><i class="bi" :class="saving ? 'bi-hourglass-split' : (saved ? 'bi-arrow-repeat' : 'bi-save')"></i> <span x-text="saved ? 'Update Surat Jalan' : 'Simpan Surat Jalan'"></span></button>
         <a x-show="saved" :href="printUrl" class="btn btn-primary" target="_blank"><i class="bi bi-file-earmark-pdf"></i> Print PDF</a>
         <button type="button" x-show="saved" @click="newForm()" class="btn btn-outline-secondary"><i class="bi bi-plus-circle"></i> Buat Baru</button>
-        <a x-show="!saved" href="{{ route('expedisi.index') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> Batal</a>
+        <a x-show="!saved" href="{{ route('expedisi.index') }}" data-debug="transaksiExpedisiCreateCancelBottom" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> Batal</a>
     </div>
 
     <div class="modal fade" x-ref="itemModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Pilih Item Customer</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input class="form-control form-control-sm mb-3" placeholder="Cari item atau rute..." x-model="itemSearch" @input.debounce.300ms="loadItems()"><div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Item</th><th>Dari</th><th>Sampai</th><th>Rute</th><th>Jenis</th><th class="text-end">Harga</th><th></th></tr></thead><tbody><template x-for="item in items" :key="item.KODE"><tr><td x-text="item.KETERANGAN || '-' "></td><td x-text="item.DARI || '-' "></td><td x-text="item.SAMPAI || '-' "></td><td x-text="item.RUTE || '-' "></td><td x-text="item.JENIS || '-' "></td><td class="text-end" x-text="money(item.HARGA)"></td><td><button type="button" class="btn btn-sm btn-primary" @click="chooseItem(item)">Pilih</button></td></tr></template><tr x-show="!items.length"><td colspan="7" class="text-center text-muted">Tidak ada item untuk customer ini.</td></tr></tbody></table></div><div class="d-flex justify-content-between align-items-center"><button type="button" class="btn btn-sm btn-outline-secondary" @click="loadItems(itemPage - 1)" :disabled="itemPage <= 1">Sebelumnya</button><span class="small text-muted">Halaman <span x-text="itemPage"></span> / <span x-text="itemLastPage"></span></span><button type="button" class="btn btn-sm btn-outline-secondary" @click="loadItems(itemPage + 1)" :disabled="itemPage >= itemLastPage">Berikutnya</button></div></div></div></div></div>

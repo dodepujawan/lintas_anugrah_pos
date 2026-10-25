@@ -66,6 +66,7 @@ class ExpedisiInvoiceController extends Controller
     /** SJ lain milik customer yang masih dapat dimasukkan ke grup. */
     public function dataGabung(Request $request): JsonResponse
     {
+        $request->validate(['customer_kode' => ['required', 'string', 'max:20']]);
         $query = Expedisi::query()
             ->where('JENIS', 'EKS')->whereNotNull('NOMUAT')
             ->where(function ($q) { $q->whereNull('GB')->orWhere('GB', ''); })
@@ -84,7 +85,11 @@ class ExpedisiInvoiceController extends Controller
     public function getExistingGabung(Request $request): JsonResponse
     {
         $gb = trim((string) $request->input('gbExist'));
-        $rows = Expedisi::where('GB', $gb)->orderBy('NOSJ')->get();
+        $rows = Expedisi::where('GB', $gb)->where('JENIS', 'EKS')->orderBy('NOSJ')->get();
+
+        if ($rows->isEmpty()) {
+            return response()->json(['message' => 'Grup gabungan tidak ditemukan.'], 404);
+        }
 
         return response()->json([
             'data' => $rows->values()->map(fn (Expedisi $row, int $i) => $this->formatRow($row, $i + 1, true)),
@@ -120,7 +125,7 @@ class ExpedisiInvoiceController extends Controller
         try {
             $data = $request->validate([
                 'nosj_list' => ['required', 'array', 'min:2'],
-                'nosj_list.*' => ['required', 'string'],
+                'nosj_list.*' => ['required', 'string', 'distinct'],
                 'no_invoice' => ['nullable', 'string', 'max:15'],
                 'item' => ['nullable', 'string', 'max:100'],
                 'harga' => ['required', 'numeric', 'min:0'],
@@ -138,7 +143,15 @@ class ExpedisiInvoiceController extends Controller
                 }
 
                 if ($existingGb) {
-                    Expedisi::where('GB', $existingGb)->lockForUpdate()->get()->each(function (Expedisi $row) {
+                    $oldRows = Expedisi::where('GB', $existingGb)
+                        ->where('JENIS', 'EKS')->orderBy('id')->lockForUpdate()->get();
+                    if ($oldRows->isEmpty()) {
+                        throw new \RuntimeException('Grup gabungan tidak ditemukan. Muat ulang halaman.');
+                    }
+                    if ($oldRows->contains(fn (Expedisi $row) => filled($row->INVOICE))) {
+                        throw new \RuntimeException('Grup ini sudah menjadi invoice dan tidak dapat diubah.');
+                    }
+                    $oldRows->each(function (Expedisi $row) {
                         $row->update([
                             'HARGA' => $row->hargaaw, 'NDISC' => $row->NDISCAW, 'DC' => $row->DCAW,
                             'TOTAL' => 0, 'PPN' => 0, 'GRAND' => 0, 'PIUTANG' => 0,
@@ -149,7 +162,7 @@ class ExpedisiInvoiceController extends Controller
                     // Re-read after rollback so backups come from the original SJ values,
                     // not from the old group's master/detail overrides.
                     $rows = Expedisi::whereIn('NOSJ', $data['nosj_list'])
-                        ->where('JENIS', 'EKS')->lockForUpdate()->orderBy('NOSJ')->get();
+                        ->where('JENIS', 'EKS')->orderBy('NOSJ')->lockForUpdate()->get();
                 } else {
                     $gb = $this->generateGB();
                 }
@@ -159,8 +172,9 @@ class ExpedisiInvoiceController extends Controller
                         throw new \RuntimeException("SJ {$row->NOSJ} sudah diproses atau tergabung di grup lain.");
                     }
                 }
-                if ($rows->pluck('CUSTOMER_KODE')->filter()->unique()->count() > 1) {
-                    throw new \RuntimeException('SJ dari customer berbeda tidak dapat digabung.');
+                $customerCodes = $rows->map(fn (Expedisi $row) => trim((string) $row->CUSTOMER_KODE))->unique();
+                if ($customerCodes->count() !== 1 || $customerCodes->first() === '') {
+                    throw new \RuntimeException('Kode customer SJ tidak sama atau belum terisi. Periksa data SJ terlebih dahulu.');
                 }
                 if ($rows->pluck('JENISHRG')->filter()->unique()->count() > 1) {
                     throw new \RuntimeException('Jenis harga/pesanan harus sama untuk satu gabungan.');

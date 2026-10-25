@@ -627,10 +627,11 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |--------------------------------------------------------------------------
     | Expedisi Generate Invoice (Generate Invoice + AR + Excel)
     |   sidebar_Invoice_gen_expedisi → expedisi-generate-invoice.index
-    */
+     */
      Route::get('expedisi-generate-invoice/data', [ExpedisiGenerateInvoiceController::class, 'getDataInvoiceGen'])->name('expedisi-generate-invoice.data');
+     Route::get('expedisi-generate-invoice/customers', [ExpedisiGenerateInvoiceController::class, 'customerLookup'])->name('expedisi-generate-invoice.customers');
      Route::get('expedisi-generate-invoice/export', [ExpedisiGenerateInvoiceController::class, 'export'])->name('expedisi-generate-invoice.export');
-     Route::resource('expedisi-generate-invoice', ExpedisiGenerateInvoiceController::class)->except(['store']);
+     Route::resource('expedisi-generate-invoice', ExpedisiGenerateInvoiceController::class)->only(['index', 'create']);
      Route::post('expedisi-generate-invoice', [ExpedisiGenerateInvoiceController::class, 'prosesInvoiceStore'])->name('expedisi-generate-invoice.store');
 
     /*

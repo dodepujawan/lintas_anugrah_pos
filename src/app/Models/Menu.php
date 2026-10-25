@@ -84,6 +84,23 @@ class Menu extends Model
             $route = substr($route, 0, $position);
         }
 
+        // Resource menus are registered as *.index, while related actions
+        // commonly use *.data, *.store, *.export, or *.show route names.
+        $parts = explode('.', $routeName);
+        array_pop($parts);
+        while ($parts !== []) {
+            $indexMenu = static::where(
+                'route_name',
+                implode('.', $parts) . '.index'
+            )->first();
+
+            if ($indexMenu) {
+                return static::$resolvedRouteCache[$routeName] = $indexMenu;
+            }
+
+            array_pop($parts);
+        }
+
         return static::$resolvedRouteCache[$routeName] = null;
     }
 

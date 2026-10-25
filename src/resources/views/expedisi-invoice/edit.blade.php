@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="container-fluid" data-debug="transaksiExpedisiInvoiceEditList">
+    @if (session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif
+    @if (session('error'))<div class="alert alert-danger" role="alert">{{ session('error') }}</div>@endif
     <div class="row mb-3">
         <div class="col">
             <h1 class="page-title mb-1">Edit Invoice Expedisi</h1>
@@ -35,7 +37,7 @@
                         <th>Sales</th>
                         <th class="text-end">Piutang</th>
                         <th class="text-end">Bayar</th>
-                        <th class="text-end">Saldo</th>
+                    <th class="text-end">Sisa Piutang</th>
                         <th class="text-end">Aksi</th>
                     </tr>
                 </thead>
@@ -49,7 +51,7 @@
                         <td>{{ $inv->SALES ?? '-' }}</td>
                         <td class="text-end">{{ number_format((float) $inv->PIUTANG, 0, ',', '.') }}</td>
                         <td class="text-end">{{ number_format((float) $inv->BAYAR, 0, ',', '.') }}</td>
-                        <td class="text-end">{{ number_format((float) $inv->SALDO, 0, ',', '.') }}</td>
+                        <td class="text-end">{{ number_format(max(0, (float) $inv->SALDO - (float) $inv->BAYAR), 0, ',', '.') }}</td>
                         <td class="text-end">
                             <a href="{{ route('expedisi-invoice-gen.edit', $inv->NOFAKTUR) }}" id="btnEditInvoice_{{ $inv->NOFAKTUR }}" data-debug="transaksiExpedisiInvoiceEditBtn_{{ $inv->NOFAKTUR }}" class="btn btn-sm btn-outline-warning" title="Edit Invoice">
                                 <i class="bi bi-pencil"></i>
@@ -60,7 +62,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="10" class="text-center py-4 text-muted">
+                    <tr><td colspan="9" class="text-center py-4 text-muted">
                         <i class="bi bi-inbox display-4"></i>
                         <p class="mt-2">Tidak ada data invoice.</p>
                     </td></tr>
