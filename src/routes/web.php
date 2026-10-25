@@ -619,7 +619,9 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
      Route::get('expedisi-invoice/data/existing', [ExpedisiInvoiceController::class, 'getExistingGabung'])
          ->name('expedisi-invoice.data.existing');
      Route::get('expedisi-invoice/{noInvoice}/pdf', [ExpedisiGenerateInvoiceController::class, 'pdfGabungInvoice'])
-         ->name('expedisi-invoice.pdfGabungInvoice');
+          ->name('expedisi-invoice.pdfGabungInvoice');
+     Route::get('expedisi-invoice/{noInvoice}/text', [ExpedisiGenerateInvoiceController::class, 'printInvoiceText'])
+         ->name('expedisi-invoice.text');
      Route::get('expedisi-invoice/{noInvoice}', [ExpedisiInvoiceController::class, 'show'])
          ->name('expedisi-invoice.show');
 

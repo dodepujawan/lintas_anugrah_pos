@@ -25,7 +25,10 @@ class ExpedisiInvoiceGenerationTest extends TestCase
         $this->get(route('expedisi-generate-invoice.index'))
             ->assertOk()
             ->assertSee('Surat Jalan Siap Invoice')
-            ->assertSee('transaksiExpedisiInvoiceGenerateSubmit');
+            ->assertSee('transaksiExpedisiInvoiceGenerateSubmit')
+            ->assertSee('FJO2026000001')
+            ->assertSee('Nomor final bisa berubah')
+            ->assertDontSee('name="SALES"');
 
         $this->getJson(route('expedisi-generate-invoice.data'))
             ->assertOk()
@@ -36,6 +39,10 @@ class ExpedisiInvoiceGenerationTest extends TestCase
             ->assertJsonPath('data.0.GROUP_SIZE', 2)
             ->assertJsonPath('data.0.GROUP_SJS.1', 'SJ-002')
             ->assertJsonPath('data.0.TOPKREDIT', 5)
+            ->assertJsonStructure(['data' => [[
+                'JUMLAH', 'UNIT', 'HARGA', 'SUBTOTAL', 'DCHARGE', 'TOTAL',
+                'DISC', 'DISC_AMOUNT', 'DPP', 'PPN', 'GRAND', 'TOP',
+            ]]])
             ->assertJsonPath('data.0.GRAND', 120000);
 
         $this->getJson(route('expedisi-generate-invoice.data', ['q' => 'SJ-002']))
@@ -60,6 +67,13 @@ class ExpedisiInvoiceGenerationTest extends TestCase
             'BAYAR' => 25000,
             'KETERANGAN' => 'INVOICE DARI EXPEDISI',
         ])->assertRedirect(route('expedisi-invoice.show', 'FJO2026000001'));
+        $this->assertSame('FJO2026000001', session('autoPrintInvoice'));
+        $this->get(route('expedisi-invoice.show', 'FJO2026000001'))
+            ->assertOk()
+            ->assertSee('btnDirectPrintInvoice')
+            ->assertSee('http://localhost:3000/print-text')
+            ->assertSee('[Direct Print] Respons Electron:')
+            ->assertSee('directPrintStatus');
 
         $this->assertDatabaseCount('arh', 1);
         $invoice = Arh::firstOrFail();
@@ -79,6 +93,7 @@ class ExpedisiInvoiceGenerationTest extends TestCase
         $this->assertDatabaseHas('expedisis', [
             'NOSJ' => 'SJ-002', 'INVOICE' => 'FJO2026000001', 'PIUTANG' => 0,
         ]);
+        $this->assertDatabaseHas('expedisis', ['NOSJ' => 'SJ-001', 'TOP' => 5]);
     }
 
     public function test_export_reads_live_receivables_without_duplicating_group_payment_totals(): void
@@ -181,6 +196,13 @@ class ExpedisiInvoiceGenerationTest extends TestCase
             'NOSJ' => 'SJ-001', 'INVOICE' => 'FJO2026000001', 'PIUTANG' => 0,
         ]);
         $this->assertDatabaseCount('jurnals', 0);
+        $printResponse = $this->getJson(route('expedisi-invoice.text', 'FJO2026000001'))
+            ->assertOk()
+            ->assertJsonStructure(['text', 'total_pages'])
+            ->assertJsonPath('total_pages', 1);
+        $this->assertStringStartsWith("\x1B\x0F", $printResponse->json('text'));
+        $this->assertStringContainsString('NOMOR SJ : SJ-001,SJ-002', $printResponse->json('text'));
+        $this->assertStringContainsString('PT.LINTAS ANUGERAH SEJATI', $printResponse->json('text'));
     }
 
     public function test_editing_invoice_metadata_updates_expedisi_rows_without_touching_journals(): void
@@ -248,6 +270,11 @@ class ExpedisiInvoiceGenerationTest extends TestCase
             ['name' => 'Edit Invoice EKS', 'section' => 'Transaksi', 'is_sidebar' => true]
         );
         $role->menus()->attach($editMenu->id, ['can_view' => true, 'can_edit' => true]);
+        $invoiceMenu = Menu::updateOrCreate(
+            ['route_name' => 'expedisi-invoice.index'],
+            ['name' => 'Invoice Expedisi', 'section' => 'Transaksi', 'is_sidebar' => true]
+        );
+        $role->menus()->attach($invoiceMenu->id, ['can_view' => true]);
 
         $user = User::factory()->create(['role_id' => $role->id, 'is_active' => true]);
         $this->actingAs($user);

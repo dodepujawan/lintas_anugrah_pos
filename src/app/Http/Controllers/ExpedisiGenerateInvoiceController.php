@@ -22,7 +22,9 @@ class ExpedisiGenerateInvoiceController extends Controller
 
     public function index()
     {
-        return view('expedisi-invoice.generate');
+        return view('expedisi-invoice.generate', [
+            'invoicePreview' => $this->nextInvoiceNumber(),
+        ]);
     }
 
     public function create()
@@ -94,7 +96,8 @@ class ExpedisiGenerateInvoiceController extends Controller
             })
             ->select([
                 'id', 'NOMUAT', 'TGLMUAT', 'NOSJ', 'GB', 'CUSTOMER',
-                'CUSTOMER_KODE', 'NAMA_KENDARAAN', 'GRAND',
+                'CUSTOMER_KODE', 'NAMA_KENDARAAN', 'JUMLAH', 'UNIT', 'HARGA',
+                'TOTAL', 'DISC', 'NDISC', 'DC', 'PPN', 'GRAND', 'TOP',
             ])
             ->addSelect([
                 'GROUP_SIZE' => DB::table('expedisis as group_members')
@@ -109,13 +112,16 @@ class ExpedisiGenerateInvoiceController extends Controller
         $rows = $query->orderByDesc('TGLMUAT')->orderByDesc('id')
             ->forPage($page, $perPage)
             ->get();
-        $groupNosjs = Expedisi::query()
+        $groupSummaries = Expedisi::query()
             ->where('JENIS', 'EKS')
             ->whereIn('GB', $rows->pluck('GB')->filter()->unique())
             ->orderBy('NOSJ')
-            ->get(['GB', 'NOSJ'])
+            ->get(['GB', 'NOSJ', 'JUMLAH'])
             ->groupBy('GB')
-            ->map(fn ($members) => $members->pluck('NOSJ')->map(fn ($noSj) => trim((string) $noSj))->all());
+            ->map(fn ($members) => [
+                'SJS' => $members->pluck('NOSJ')->map(fn ($noSj) => trim((string) $noSj))->all(),
+                'JUMLAH' => (float) $members->sum('JUMLAH'),
+            ]);
         $customerCodes = $rows->pluck('CUSTOMER_KODE')->map(fn ($code) => trim((string) $code))->filter()->unique();
         $creditTerms = [];
         Mcustomer::whereIn('CUSTOMER', $customerCodes)->get(['CUSTOMER', 'TOPKREDIT'])
@@ -128,7 +134,9 @@ class ExpedisiGenerateInvoiceController extends Controller
                 $creditTerms[$code] ??= (int) $customer->TOPKREDIT;
             });
 
-        $data = $rows->map(function (Expedisi $row) use ($groupNosjs, $creditTerms) {
+        $data = $rows->map(function (Expedisi $row) use ($groupSummaries, $creditTerms) {
+            $summary = $row->GB ? ($groupSummaries[$row->GB] ?? null) : null;
+
             return [
                 'NOSJ' => trim((string) $row->NOSJ),
                 'NOMUAT' => trim((string) $row->NOMUAT),
@@ -136,9 +144,20 @@ class ExpedisiGenerateInvoiceController extends Controller
                 'GB' => trim((string) $row->GB),
                 'CUSTOMER' => trim((string) $row->CUSTOMER),
                 'NAMA_KENDARAAN' => trim((string) $row->NAMA_KENDARAAN),
+                'JUMLAH' => $summary['JUMLAH'] ?? (float) $row->JUMLAH,
+                'UNIT' => trim((string) $row->UNIT),
+                'HARGA' => (float) $row->HARGA,
+                'SUBTOTAL' => (float) $row->HARGA,
+                'TOTAL' => (float) $row->TOTAL,
+                'DISC' => (float) $row->DISC,
+                'DISC_AMOUNT' => (float) $row->NDISC,
+                'DCHARGE' => (float) $row->DC,
+                'DPP' => (float) $row->TOTAL - (float) $row->NDISC,
+                'PPN' => (float) $row->PPN,
                 'GRAND' => (float) $row->GRAND,
                 'GROUP_SIZE' => $row->GB ? (int) $row->GROUP_SIZE : 1,
-                'GROUP_SJS' => $row->GB ? ($groupNosjs[$row->GB] ?? []) : [trim((string) $row->NOSJ)],
+                'GROUP_SJS' => $summary['SJS'] ?? [trim((string) $row->NOSJ)],
+                'TOP' => (int) $row->TOP,
                 'TOPKREDIT' => $creditTerms[trim((string) $row->CUSTOMER_KODE)] ?? 0,
             ];
         });
@@ -178,13 +197,12 @@ class ExpedisiGenerateInvoiceController extends Controller
     public function prosesInvoiceStore(Request $request)
     {
         $validated = $request->validate([
-            'INVOICE' => ['nullable', 'string', 'max:20', 'unique:arh,NOFAKTUR'],
             'selected_sj' => ['required', 'string', 'max:20'],
             'TGLFAKTUR' => ['required', 'date'],
             'TGLJT' => ['nullable', 'date'],
+            'TOP' => ['nullable', 'integer', 'min:0', 'max:3650'],
             'BAYAR' => ['nullable', 'numeric', 'min:0'],
             'KETERANGAN' => ['nullable', 'string', 'max:500'],
-            'SALES' => ['nullable', 'string', 'max:50'],
         ]);
         if ($this->periodLocks->isLocked($validated['TGLFAKTUR'])) {
             return back()->withInput()->with('error', $this->periodLocks->lockedMessage($validated['TGLFAKTUR']));
@@ -232,12 +250,10 @@ class ExpedisiGenerateInvoiceController extends Controller
                     ->where(fn ($query) => $query->where('CUSTOMER', $customerCode)->orWhere('kode_cus', $customerCode))
                     ->orderByRaw('CASE WHEN CUSTOMER = ? THEN 0 ELSE 1 END', [$customerCode])
                     ->first();
+                $top = (int) ($validated['TOP'] ?? $customer->TOPKREDIT ?? 0);
                 $jatuhTempo = $validated['TGLJT']
-                    ?? \Carbon\Carbon::parse($tanggal)->addDays((int) ($customer->TOPKREDIT ?? 0))->toDateString();
-                $noInvoice = trim((string) ($validated['INVOICE'] ?? ''));
-                if ($noInvoice === '') {
-                    $noInvoice = $this->generateInvoiceNumber();
-                }
+                    ?? \Carbon\Carbon::parse($tanggal)->addDays($top)->toDateString();
+                $noInvoice = $this->nextInvoiceNumber(lock: true);
 
                 if (Arh::where('NOFAKTUR', $noInvoice)->exists()
                     || Expedisi::where('INVOICE', $noInvoice)->exists()) {
@@ -249,7 +265,6 @@ class ExpedisiGenerateInvoiceController extends Controller
                     'TGLFAKTUR' => $tanggal,
                     'TGLJT' => $jatuhTempo,
                     'CUSTOMER' => $master->CUSTOMER,
-                    'SALES' => $validated['SALES'] ?? null,
                     'PIUTANG' => $totalGrand,
                     'BAYAR' => $bayar,
                     'SALDO' => $totalGrand,
@@ -263,12 +278,13 @@ class ExpedisiGenerateInvoiceController extends Controller
 
                 $userInvoice = (string) ($request->user()->user_id ?? $request->user()->id)
                     . '-' . now()->format('d-m-Y H:i:s');
-                $expedisis->each(function (Expedisi $expedisi) use ($noInvoice, $tanggal, $jatuhTempo, $master, $totalGrand, $userInvoice, $bayar, $piutang) {
+                $expedisis->each(function (Expedisi $expedisi) use ($noInvoice, $tanggal, $jatuhTempo, $master, $totalGrand, $userInvoice, $bayar, $piutang, $top) {
                     $isMaster = $expedisi->is($master);
                     $expedisi->update([
                         'INVOICE' => $noInvoice,
                         'TGLINVOICE' => $tanggal,
                         'TGLJT' => $jatuhTempo,
+                        'TOP' => $top,
                         'BAYAR' => $isMaster ? $bayar : 0,
                         'PIUTANG' => $isMaster ? $piutang : 0,
                         'STS' => 'INVOICE',
@@ -287,7 +303,8 @@ class ExpedisiGenerateInvoiceController extends Controller
         }
 
         return redirect()->route('expedisi-invoice.show', $noInvoice)
-            ->with('success', "Invoice {$noInvoice} berhasil dibuat.");
+            ->with('success', "Invoice {$noInvoice} berhasil dibuat.")
+            ->with('autoPrintInvoice', $noInvoice);
     }
 
     public function showInvoiceGabung($noInvoice)
@@ -420,13 +437,124 @@ class ExpedisiGenerateInvoiceController extends Controller
 
     public function printInvoiceText($noInvoice)
     {
-        $arh = Arh::where('NOFAKTUR', $noInvoice)->firstOrFail();
-        $details = Expedisi::where('INVOICE', $noInvoice)->get();
-        $signature = \App\Models\Signature::where('is_active', true)->first();
-        $rekening = \App\Models\Rekening::where('AKTIF', true)->first();
+        $rows = Expedisi::where('INVOICE', $noInvoice)->orderBy('NOSJ')->get();
+        abort_if($rows->isEmpty(), 404);
 
-        return response()->view('expedisi-invoice.print.text', compact('arh', 'details', 'signature', 'rekening'))
-            ->header('Content-Type', 'text/plain');
+        $master = $rows->firstWhere('GRAND', '>', 0) ?? $rows->first();
+        $customer = Mcustomer::where('CUSTOMER', $master->CUSTOMER_KODE)
+            ->orWhere('kode_cus', $master->CUSTOMER_KODE)
+            ->first();
+        $rekening = \App\Models\Rekening::where('AKTIF', 1)->first();
+
+        $lineWidth = 130;
+        $leftMargin = 3;
+        $linesPerPage = 30;
+        $half = intdiv($lineWidth, 2);
+        $esc = "\x1B";
+        $boldOn = $esc . 'E';
+        $boldOff = $esc . 'F';
+        $doubleWidthOn = $esc . 'W' . "\x01";
+        $doubleWidthOff = $esc . 'W' . "\x00";
+        $kepada = trim(preg_replace('/[\r\n]+/', ' ', strtoupper($customer->NAMACUST ?? '-')));
+        $up = trim(preg_replace('/[\r\n]+/', ' ', strtoupper($customer->KONTAK ?? '-')));
+        $alamat = trim(preg_replace('/[\r\n]+/', ' ', strtoupper($customer->ALAMAT1 ?? '-')));
+        $bank = $rekening->BANK ?? '-';
+        $norek = $rekening->NOREK ?? '-';
+        $namaRekening = $rekening->NAMA ?? '-';
+        $dibayar = (float) ($master->BAYAR ?? 0);
+        $saldo = (float) ($master->PIUTANG ?? 0);
+        $nomorSj = $rows->pluck('NOSJ')->filter(fn ($value) => trim((string) $value) !== '')->unique()->implode(',');
+        $judulKiri = 'INVOICE';
+        $judulKanan = 'PT.LINTAS ANUGERAH SEJATI';
+        $header = [
+            $boldOn . $doubleWidthOn . $judulKiri . $doubleWidthOff . $boldOff
+                . str_repeat(' ', max(0, $half - strlen($judulKiri) * 2))
+                . str_repeat(' ', max(0, $half - strlen($judulKanan) * 2))
+                . $boldOn . $doubleWidthOn . $judulKanan . $doubleWidthOff . $boldOff,
+            str_repeat('=', $lineWidth),
+            sprintf('%-65s%65s', 'NOMOR    : ' . $master->INVOICE, 'TANGGAL  : ' . ($master->TGLINVOICE ? date('d-m-Y', strtotime($master->TGLINVOICE)) : '-')),
+            sprintf('%-65s%65s', 'NOMOR SJ : ' . $nomorSj, $master->TGLJT ? 'TGL JT   : ' . date('d-m-Y', strtotime($master->TGLJT)) : ''),
+            sprintf('%-65s%65s', 'KEPADA   : ' . $kepada, 'CETAK    : ' . now()->format('d-m-Y H:i')),
+            sprintf('%-65s%65s', 'UP       : ' . $up, ''),
+        ];
+        foreach (explode("\n", wordwrap($alamat, 56, "\n")) as $index => $alamatRow) {
+            $header[] = $index === 0 ? 'ALAMAT   : ' . $alamatRow : str_repeat(' ', 10) . $alamatRow;
+        }
+        $header[] = '';
+        $header[] = 'JUMLAH SJ : ' . $rows->count();
+        $header[] = str_repeat('=', $lineWidth);
+
+        $tableHeader = [
+            sprintf('%-4s %-48s %13s %14s %8s %18s %10s', 'NO', 'NAMA BARANG / PESANAN', 'JUMLAH UNIT', 'HARGA @', 'DISC %', 'SUB TOTAL', 'PAJAK %'),
+            str_repeat('-', $lineWidth),
+        ];
+        $vehicle = trim((string) ($master->NAMA_KENDARAAN ?? ''));
+        $plate = trim((string) ($master->PLAT_NOMOR ?? ''));
+        $vehicleText = $vehicle !== '' ? $vehicle : '-';
+        if ($plate !== '') $vehicleText .= ' (' . $plate . ')';
+        $description = trim((string) ($master->PESANANGB ?? ''));
+        if ($description === '') $description = trim((string) ($master->KETERANGAN ?? ''));
+        $description = $description !== '' ? $description : '-';
+        $quantity = (float) $rows->sum('JUMLAH');
+        $quantityText = floor($quantity) == $quantity
+            ? number_format($quantity, 0, ',', '.')
+            : rtrim(rtrim(number_format($quantity, 3, ',', '.'), '0'), ',');
+        $unit = strtoupper(trim((string) ($master->UNIT ?? '')) ?: 'KG');
+        $detail = sprintf(
+            '%-4s %-48s %13s %14s %8s %18s %10s',
+            '1',
+            substr($vehicleText . ' - ' . $description, 0, 48),
+            $quantityText . ' ' . $unit,
+            number_format((float) ($master->HARGA ?? 0), 0, ',', '.'),
+            number_format((float) ($master->DISC ?? 0), 2, ',', '.'),
+            number_format((float) $rows->sum('TOTAL'), 0, ',', '.'),
+            number_format((float) ($master->PPN ?? 0), 2, ',', '.')
+        );
+        $footer = [
+            str_repeat('-', $lineWidth),
+            sprintf('%-65s%65s', 'BANK    : ' . $bank, 'SUB TOTAL : ' . number_format((float) $master->GRAND, 0, ',', '.')),
+            sprintf('%-65s%65s', 'NO REK  : ' . $norek, 'DIBAYAR   : ' . number_format($dibayar, 0, ',', '.')),
+            sprintf('%-65s%65s', 'A/N     : ' . $namaRekening, 'SALDO     : ' . number_format($saldo, 0, ',', '.')),
+            '',
+            str_pad('PENERIMA', $half) . str_pad('MENGETAHUI', $half),
+            '', '', '',
+            str_pad('(......................)', $half) . str_pad('PT. LINTAS MITRA ANUGERAH SEJATI', $half),
+        ];
+
+        $pages = [];
+        $remainingRows = [$detail];
+        while ($remainingRows !== []) {
+            $overhead = $pages === [] ? count($header) + count($tableHeader) : 2 + count($tableHeader);
+            $pages[] = array_splice($remainingRows, 0, max(1, $linesPerPage - $overhead));
+        }
+        if ($pages === []) $pages[] = [];
+        $lastOverhead = count($pages) === 1 ? count($header) + count($tableHeader) : 2 + count($tableHeader);
+        $footerNeedsOwnPage = ($linesPerPage - $lastOverhead - count(end($pages))) < count($footer);
+        $totalPages = count($pages) + ($footerNeedsOwnPage ? 1 : 0);
+        $outputPages = [];
+        foreach ($pages as $index => $pageRows) {
+            $pageLines = $index === 0
+                ? $header
+                : [str_pad('INVOICE ' . $master->INVOICE . ' (LANJUTAN) - HAL ' . ($index + 1) . '/' . $totalPages, $lineWidth, ' ', STR_PAD_BOTH), str_repeat('=', $lineWidth)];
+            $pageLines = array_merge($pageLines, $tableHeader, $pageRows);
+            if ($index === count($pages) - 1 && !$footerNeedsOwnPage) {
+                $pageLines = array_merge($pageLines, array_fill(0, max(0, $linesPerPage - count($pageLines) - count($footer)), ''));
+                $pageLines = array_merge($pageLines, $footer);
+            }
+            $outputPages[] = array_map(fn ($line) => str_repeat(' ', $leftMargin) . $line, $pageLines);
+        }
+        if ($footerNeedsOwnPage) {
+            $pageLines = [str_pad('INVOICE ' . $master->INVOICE . ' (LANJUTAN) - HAL ' . $totalPages . '/' . $totalPages, $lineWidth, ' ', STR_PAD_BOTH), str_repeat('=', $lineWidth)];
+            $pageLines = array_merge($pageLines, array_fill(0, max(0, $linesPerPage - 2 - count($footer)), ''), $footer);
+            $outputPages[] = array_map(fn ($line) => str_repeat(' ', $leftMargin) . $line, $pageLines);
+        }
+
+        $pagesText = implode("\r\n\x0C\r\n", array_map(fn ($lines) => implode("\r\n", $lines), $outputPages));
+        $text = iconv('UTF-8', 'CP437//TRANSLIT//IGNORE', $pagesText);
+        if ($text === false) $text = $pagesText;
+        $text = "\x1B\x0F" . $text . "\x12";
+
+        return response()->json(['text' => $text, 'total_pages' => $totalPages]);
     }
 
     public function pdfGabungInvoice($noInvoice)
@@ -441,13 +569,17 @@ class ExpedisiGenerateInvoiceController extends Controller
         return $pdf->stream('invoice-' . $noInvoice . '.pdf', ['stream' => true]);
     }
 
-    protected function generateInvoiceNumber(): string
+    protected function nextInvoiceNumber(bool $lock = false): string
     {
         $prefix = 'FJO' . now()->format('Y');
-        $latestArh = Arh::where('NOFAKTUR', 'like', $prefix . '%')
-            ->lockForUpdate()->orderByDesc('NOFAKTUR')->value('NOFAKTUR');
-        $latestExpedisi = Expedisi::where('INVOICE', 'like', $prefix . '%')
-            ->lockForUpdate()->orderByDesc('INVOICE')->value('INVOICE');
+        $arhQuery = Arh::where('NOFAKTUR', 'like', $prefix . '%');
+        $expedisiQuery = Expedisi::where('INVOICE', 'like', $prefix . '%');
+        if ($lock) {
+            $arhQuery->lockForUpdate();
+            $expedisiQuery->lockForUpdate();
+        }
+        $latestArh = $arhQuery->orderByDesc('NOFAKTUR')->value('NOFAKTUR');
+        $latestExpedisi = $expedisiQuery->orderByDesc('INVOICE')->value('INVOICE');
         $lastNumber = max(
             (int) substr((string) $latestArh, -6),
             (int) substr((string) $latestExpedisi, -6),
