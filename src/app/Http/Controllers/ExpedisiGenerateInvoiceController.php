@@ -260,13 +260,16 @@ class ExpedisiGenerateInvoiceController extends Controller
                     throw new \RuntimeException("Nomor invoice {$noInvoice} sudah digunakan.");
                 }
 
+                // Pembayaran awal mengikuti alur lama: nilainya disimpan pada
+                // baris Expedisi, sedangkan ARH tetap menjadi saldo piutang.
+                // Pembayaran ARH dicatat oleh modul pelunasan/kwitansi.
                 $arh = Arh::create([
                     'NOFAKTUR' => $noInvoice,
                     'TGLFAKTUR' => $tanggal,
                     'TGLJT' => $jatuhTempo,
                     'CUSTOMER' => $master->CUSTOMER,
-                    'PIUTANG' => $totalGrand,
-                    'BAYAR' => $bayar,
+                    'PIUTANG' => $piutang,
+                    'BAYAR' => 0,
                     'SALDO' => $totalGrand,
                     'DISCOUNT' => $master->NDISC ?? 0,
                     'KETERANGAN' => ($validated['KETERANGAN'] ?? null) ?: 'INVOICE DARI EXPEDISI',
@@ -329,6 +332,24 @@ class ExpedisiGenerateInvoiceController extends Controller
             ->orderByDesc('TGLFAKTUR')
             ->paginate(20)
             ->withQueryString();
+
+        // The legacy edit table reads financial values from the Expedisi
+        // master row. Keep that source so an initial payment is visible even
+        // though ARH.BAYAR remains reserved for the payment module.
+        $invoices->getCollection()->transform(function (Arh $invoice) {
+            $master = Expedisi::where('INVOICE', $invoice->NOFAKTUR)
+                ->where('JENIS', 'EKS')
+                ->where('GRAND', '>', 0)
+                ->orderByDesc('GRAND')
+                ->orderBy('id')
+                ->first();
+
+            $invoice->display_grand = (float) ($master->GRAND ?? $invoice->SALDO);
+            $invoice->display_piutang = (float) ($master->PIUTANG ?? $invoice->PIUTANG);
+            $invoice->display_bayar = (float) ($master->BAYAR ?? 0);
+
+            return $invoice;
+        });
 
         return view('expedisi-invoice.edit', compact('invoices', 'search'));
     }
@@ -464,6 +485,8 @@ class ExpedisiGenerateInvoiceController extends Controller
                         'TOTAL' => $total,
                         'PPN' => $ppnPersen,
                         'GRAND' => $grand,
+                        // Pembayaran tetap disimpan pada master Expedisi,
+                        // sama seperti src_old.
                         'BAYAR' => $bayar,
                         'PIUTANG' => $piutang,
                         'TGLINVOICE' => $validated['TGLFAKTUR'],
@@ -473,22 +496,32 @@ class ExpedisiGenerateInvoiceController extends Controller
                     ]);
 
                     $arh = Arh::where('NOFAKTUR', $noInvoice)->first();
-                    $arhData = [
-                        'TGLFAKTUR' => $validated['TGLFAKTUR'],
-                        'TGLJT' => $validated['TGLJT'] ?? $arh?->TGLJT,
-                        'CUSTOMER' => $master->CUSTOMER,
-                        'PIUTANG' => $piutang,
-                        'BAYAR' => $bayar,
-                        'SALDO' => $grand,
-                        'DISCOUNT' => $ndisc,
-                        'KETERANGAN' => $validated['KETERANGAN'],
-                        'STATUS' => $piutang > 0 ? 'OPEN' : 'PAID',
-                        'TGLLUNAS' => $piutang > 0 ? null : $validated['TGLFAKTUR'],
-                    ];
-                    if (! $arh) {
-                        Arh::create($arhData + ['NOFAKTUR' => $noInvoice, 'SOURCE' => 'Expedisi', 'USER' => $request->user()->name ?? 'SYSTEM']);
-                    } else {
-                        $arh->update($arhData + ['USER_UPDATE' => $request->user()->name ?? 'SYSTEM']);
+                    if ($piutang > 0) {
+                        $arhData = [
+                            'TGLFAKTUR' => $validated['TGLFAKTUR'],
+                            'TGLJT' => $validated['TGLJT'] ?? $arh?->TGLJT,
+                            'CUSTOMER' => $master->CUSTOMER,
+                            'PIUTANG' => $piutang,
+                            // Payment is recorded on Expedisi, as in src_old.
+                            'BAYAR' => 0,
+                            'SALDO' => $grand,
+                            'DISCOUNT' => $ndisc,
+                            'KETERANGAN' => $validated['KETERANGAN'],
+                            'STATUS' => 'OPEN',
+                            'TGLLUNAS' => null,
+                        ];
+                        if (! $arh) {
+                            Arh::create($arhData + [
+                                'NOFAKTUR' => $noInvoice,
+                                'SOURCE' => 'Expedisi',
+                                'USER' => $request->user()->name ?? 'SYSTEM',
+                            ]);
+                        } else {
+                            $arh->update($arhData + ['USER_UPDATE' => $request->user()->name ?? 'SYSTEM']);
+                        }
+                    } elseif ($arh) {
+                        // src_old removes fully paid invoices from ARH.
+                        $arh->delete();
                     }
 
                     // Sinkron kwitansi bila sudah ada (setara src_old: nilai kwitansi mengikuti nilai invoice)
@@ -542,7 +575,7 @@ class ExpedisiGenerateInvoiceController extends Controller
 
     private function ensureInvoiceEditable(Arh $invoice): void
     {
-        if ((float) $invoice->BAYAR > 0) {
+        if ((float) $invoice->BAYAR > 0 || strtoupper((string) $invoice->STATUS) === 'PAID') {
             throw new \RuntimeException('Invoice sudah memiliki pembayaran. Silakan hubungi admin.');
         }
         if ($this->periodLocks->isLocked($invoice->TGLFAKTUR)) {

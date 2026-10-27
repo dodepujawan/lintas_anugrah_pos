@@ -23,7 +23,7 @@ return new class extends Migration
             $table->date('TGLINVOICE')->nullable();
             $table->char('INVOICE', 20)->nullable();
             $table->char('CUSTOMER_KODE', 20)->nullable();
-            $table->char('CUSTOMER', 30)->nullable();
+            $table->char('CUSTOMER', 100)->nullable();
 
             // KENDARAAN & DRIVER
             $table->char('KENDARAAN', 20)->nullable();

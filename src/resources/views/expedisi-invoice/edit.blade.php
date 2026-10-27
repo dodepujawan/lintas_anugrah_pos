@@ -61,9 +61,9 @@
                         <td>{{ $inv->TGLFAKTUR?->format('d/m/Y') }}</td>
                         <td class="font-monospace">{{ $inv->NOFAKTUR }}</td>
                         <td>{{ $inv->CUSTOMER }}</td>
-                        <td class="text-end">{{ number_format((float) $inv->PIUTANG + (float) $inv->BAYAR, 0, ',', '.') }}</td>
-                        <td class="text-end">{{ number_format((float) $inv->PIUTANG, 0, ',', '.') }}</td>
-                        <td class="text-end">{{ number_format((float) $inv->BAYAR, 0, ',', '.') }}</td>
+                        <td class="text-end">{{ number_format((float) $inv->display_grand, 0, ',', '.') }}</td>
+                        <td class="text-end">{{ number_format((float) $inv->display_piutang, 0, ',', '.') }}</td>
+                        <td class="text-end">{{ number_format((float) $inv->display_bayar, 0, ',', '.') }}</td>
                         <td class="text-end">
                             <button type="button" class="btn btn-sm btn-outline-warning btn_edit_invoice_eks" data-invoice="{{ $inv->NOFAKTUR }}" id="btnEditInvoice_{{ $inv->NOFAKTUR }}" data-debug="transaksiExpedisiInvoiceEditBtn_{{ $inv->NOFAKTUR }}" title="Edit Invoice">
                                 <i class="bi bi-pencil"></i>
@@ -295,7 +295,7 @@
         const total = Math.round(subTotal - discAmount);
         const ppnNominal = Math.round(total * (ppnPersen / 100));
         const grand = Math.round(total + ppnNominal + delCharge);
-        const piutang = Math.round(grand - bayar);
+        const piutang = Math.max(0, Math.round(grand - bayar));
 
         const fmt = (n) => n.toLocaleString('id-ID');
         document.getElementById('subtotal_invoice_edit').value = fmt(subTotal);
@@ -458,7 +458,11 @@
     // KALKULASI LIVE
     // =====================================================
     ['jumlah_invoice_edit', 'harga_invoice_edit', 'diskon_invoice_edit', 'del_charge_invoice_edit', 'ppn_invoice_edit', 'bayar_invoice_edit']
-        .forEach(id => document.getElementById(id).addEventListener('keyup change', hitungInvoiceEdit));
+        .forEach(id => {
+            const field = document.getElementById(id);
+            field.addEventListener('input', hitungInvoiceEdit);
+            field.addEventListener('change', hitungInvoiceEdit);
+        });
 
     // =====================================================
     // SIMPAN

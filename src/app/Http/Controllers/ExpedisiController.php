@@ -633,7 +633,7 @@ class ExpedisiController extends Controller
             'NOSJ' => 'nullable|string|max:20|unique:expedisis,NOSJ',
             'tglsj' => 'required|date',
             'CUSTOMER_KODE' => 'required|string|max:20',
-            'CUSTOMER' => 'nullable|string|max:30',
+            'CUSTOMER' => 'nullable|string|max:100',
             'PESANAN' => 'nullable|string|max:100',
             'JENISHRG' => 'nullable|string|max:1',
             'STS' => 'nullable|string|max:20',

@@ -78,8 +78,8 @@ class ExpedisiInvoiceGenerationTest extends TestCase
         $this->assertDatabaseCount('arh', 1);
         $invoice = Arh::firstOrFail();
         $this->assertSame('FJO2026000001', $invoice->NOFAKTUR);
-        $this->assertSame('120000.00', $invoice->PIUTANG);
-        $this->assertSame('25000.00', $invoice->BAYAR);
+        $this->assertSame('95000.00', $invoice->PIUTANG);
+        $this->assertSame('0.00', $invoice->BAYAR);
         $this->assertSame('120000.00', $invoice->SALDO);
         $this->assertSame('Expedisi', $invoice->SOURCE);
         $this->assertNull($invoice->NOJURNAL);
@@ -94,6 +94,12 @@ class ExpedisiInvoiceGenerationTest extends TestCase
             'NOSJ' => 'SJ-002', 'INVOICE' => 'FJO2026000001', 'PIUTANG' => 0,
         ]);
         $this->assertDatabaseHas('expedisis', ['NOSJ' => 'SJ-001', 'TOP' => 5]);
+
+        // Pembayaran awal berada di Expedisi seperti src_old, sehingga
+        // membuka form edit tidak salah dianggap sebagai pembayaran ARH.
+        $this->get(route('expedisi-invoice-gen.edit', 'FJO2026000001'))
+            ->assertOk()
+            ->assertSee('transaksiExpedisiInvoiceEdit_TGLFAKTUR');
     }
 
     public function test_export_reads_live_receivables_without_duplicating_group_payment_totals(): void
@@ -190,12 +196,16 @@ class ExpedisiInvoiceGenerationTest extends TestCase
         ])->assertRedirect(route('expedisi-invoice.show', 'FJO2026000001'));
 
         $this->assertDatabaseHas('arh', [
-            'NOFAKTUR' => 'FJO2026000001', 'STATUS' => 'PAID', 'BAYAR' => 120000,
+            'NOFAKTUR' => 'FJO2026000001', 'STATUS' => 'PAID', 'BAYAR' => 0, 'PIUTANG' => 0,
         ]);
         $this->assertDatabaseHas('expedisis', [
             'NOSJ' => 'SJ-001', 'INVOICE' => 'FJO2026000001', 'PIUTANG' => 0,
         ]);
         $this->assertDatabaseCount('jurnals', 0);
+        $this->from(route('expedisi-invoice-gen.index'))
+            ->get(route('expedisi-invoice-gen.edit', 'FJO2026000001'))
+            ->assertRedirect(route('expedisi-invoice-gen.index'))
+            ->assertSessionHas('error', 'Invoice sudah memiliki pembayaran. Silakan hubungi admin.');
         $printResponse = $this->getJson(route('expedisi-invoice.text', 'FJO2026000001'))
             ->assertOk()
             ->assertJsonStructure(['text', 'total_pages'])
@@ -249,6 +259,46 @@ class ExpedisiInvoiceGenerationTest extends TestCase
 
         $this->assertDatabaseHas('arh', [
             'NOFAKTUR' => 'FJO2026000001', 'TGLFAKTUR' => '2026-10-25 00:00:00',
+        ]);
+    }
+
+    public function test_editing_invoice_financial_fields_recalculates_receivable_and_keeps_arh_payment_zero(): void
+    {
+        $this->loginWithInvoicePermissions();
+        $this->createGroup();
+        $this->createExistingInvoice();
+
+        $this->putJson(route('expedisi-invoice-gen.update', 'FJO2026000001'), [
+            'TGLFAKTUR' => '2026-10-25',
+            'TGLJT' => '2026-10-30',
+            'KETERANGAN' => 'Invoice finansial dikoreksi',
+            'item' => 'Muatan baru',
+            'rute' => 'Rute baru',
+            'jumlah' => 2,
+            'harga' => 50000,
+            'disc' => 10,
+            'del_charge' => 5000,
+            'ppn' => 11,
+            'bayar' => 10000,
+        ])->assertOk()->assertJsonPath('status', true);
+
+        $this->assertDatabaseHas('expedisis', [
+            'NOSJ' => 'SJ-001',
+            'JUMLAH' => 2,
+            'HARGA' => 50000,
+            'NDISC' => 10000,
+            'TOTAL' => 90000,
+            'PPN' => 11,
+            'DC' => 5000,
+            'GRAND' => 104900,
+            'BAYAR' => 10000,
+            'PIUTANG' => 94900,
+        ]);
+        $this->assertDatabaseHas('arh', [
+            'NOFAKTUR' => 'FJO2026000001',
+            'PIUTANG' => 94900,
+            'BAYAR' => 0,
+            'SALDO' => 104900,
         ]);
     }
 
