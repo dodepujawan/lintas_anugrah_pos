@@ -9,30 +9,47 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('kwitansi', function (Blueprint $table) {
+            // ======================
+            // PRIMARY KEY
+            // ======================
             $table->id();
-            $table->string('NO_KWT', 50)->nullable();
-            $table->date('TGL_KWT')->nullable();
-            $table->string('NOFAKTUR', 50)->nullable();
-            $table->decimal('SALDO_FAKTUR', 12, 0)->nullable();
-            $table->decimal('NILAI_BAYAR', 12, 0)->nullable();
-            $table->decimal('DISCOUNT', 12, 0)->nullable();
-            $table->decimal('RETUR', 12, 0)->nullable();
-            $table->decimal('SISA_FAKTUR', 12, 0)->nullable();
-            $table->char('JENIS_KWT', 10)->nullable();
+            // ======================
+            // DOKUMEN & TRANSAKSI
+            // ======================
+            $table->char('NOKWT', 30)->nullable();
+            $table->date('TGL')->nullable();
+            $table->char('FDOK_TRANS', 50)->nullable();
+            $table->date('TGL_TRANS')->nullable();
+            // ======================
+            // CUSTOMER & SJ
+            // ======================
             $table->char('CUSTOMER', 30)->nullable();
-            $table->string('NAMACUST', 100)->nullable();
-            $table->char('NOBAYAR', 50)->nullable();
-            $table->string('KETERANGAN', 200)->nullable();
-            $table->char('user', 50)->nullable();
-            $table->string('USEREDIT', 50)->nullable();
-            $table->unsignedBigInteger('area_id')->nullable();
-            $table->string('area_name')->nullable();
-            $table->string('NOJURNAL', 50)->nullable();
-            $table->unsignedBigInteger('jurnal_id')->nullable();
+            $table->char('NOSJ', 30)->nullable();
+            // ======================
+            // KETERANGAN
+            // ======================
+            $table->char('FKETERANG', 100)->nullable();
+            $table->char('FNAMA', 100)->nullable();
+            // ======================
+            // NILAI & TOTAL
+            // ======================
+            $table->decimal('FNIL_DOK', 12, 0)->nullable();
+            $table->decimal('TOTAL', 12, 0)->nullable();
+            $table->decimal('PPN', 5, 2)->nullable();
+            $table->decimal('DISC', 5, 2)->nullable();
+            $table->decimal('NDISC', 12, 0)->nullable();
+            // ======================
+            // USER & JENIS
+            // ======================
+            $table->char('USERINPUT', 10)->nullable();
+            $table->char('JENIS', 3)->nullable();
+            // ======================
+            // TIMESTAMPS
+            // ======================
             $table->nullableTimestamps();
 
-            $table->index('NO_KWT');
-            $table->index('NOFAKTUR');
+            $table->index('NOKWT');
+            $table->index('FDOK_TRANS');
         });
     }
 

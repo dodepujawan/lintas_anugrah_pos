@@ -359,7 +359,13 @@ class PriceCusController extends Controller
 
     public function getPrice($kodecus)
     {
-        $priceCus = PriceCus::where('KODECUS', $kodecus)->get();
+        $priceCus = PriceCus::where('KODECUS', $kodecus)
+            ->select(['KODECUS', 'KETERANGAN', 'DARI', 'SAMPAI', 'RUTE', 'HARGA', 'JENIS'])
+            ->orderBy('DARI')
+            ->orderBy('SAMPAI')
+            ->orderBy('id')
+            ->limit(500)
+            ->get();
 
         return response()->json($priceCus);
     }

@@ -13,30 +13,24 @@ class Kwitansi extends Model
     protected $table = 'kwitansi';
 
     protected $fillable = [
-        'NO_KWT', 'TGL_KWT', 'NOFAKTUR',
-        'SALDO_FAKTUR', 'NILAI_BAYAR', 'DISCOUNT', 'RETUR', 'SISA_FAKTUR',
-        'JENIS_KWT', 'CUSTOMER', 'NAMACUST', 'NOBAYAR', 'KETERANGAN',
-        'user', 'USEREDIT', 'area_id', 'area_name', 'NOJURNAL', 'jurnal_id',
+        'NOKWT', 'TGL', 'FDOK_TRANS', 'TGL_TRANS',
+        'CUSTOMER', 'NOSJ', 'FKETERANG', 'FNAMA',
+        'FNIL_DOK', 'TOTAL', 'PPN', 'DISC', 'NDISC',
+        'USERINPUT', 'JENIS',
     ];
 
     protected $casts = [
-        'TGL_KWT' => 'date',
-        'SALDO_FAKTUR' => 'decimal:0',
-        'NILAI_BAYAR' => 'decimal:0',
-        'DISCOUNT' => 'decimal:0',
-        'RETUR' => 'decimal:0',
-        'SISA_FAKTUR' => 'decimal:0',
-        'area_id' => 'integer',
-        'jurnal_id' => 'integer',
+        'TGL' => 'date',
+        'TGL_TRANS' => 'date',
+        'FNIL_DOK' => 'decimal:0',
+        'TOTAL' => 'decimal:0',
+        'PPN' => 'decimal:2',
+        'DISC' => 'decimal:2',
+        'NDISC' => 'decimal:0',
     ];
 
     public function arh(): BelongsTo
     {
-        return $this->belongsTo(Arh::class, 'NOFAKTUR', 'NOFAKTUR');
-    }
-
-    public function jurnal(): BelongsTo
-    {
-        return $this->belongsTo(Jurnal::class, 'NOJURNAL', 'no_jurnal');
+        return $this->belongsTo(Arh::class, 'FDOK_TRANS', 'NOFAKTUR');
     }
 }

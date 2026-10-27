@@ -318,7 +318,11 @@ class ExpedisiGenerateInvoiceController extends Controller
     public function indexEdit(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $dari = $request->input('tanggal_dari');
+        $sampai = $request->input('tanggal_sampai');
         $invoices = Arh::where('SOURCE', 'Expedisi')
+            ->when($dari, fn ($query) => $query->whereDate('TGLFAKTUR', '>=', $dari))
+            ->when($sampai, fn ($query) => $query->whereDate('TGLFAKTUR', '<=', $sampai))
             ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match
                 ->where('NOFAKTUR', 'like', "%{$search}%")
                 ->orWhere('CUSTOMER', 'like', "%{$search}%")))
@@ -327,19 +331,6 @@ class ExpedisiGenerateInvoiceController extends Controller
             ->withQueryString();
 
         return view('expedisi-invoice.edit', compact('invoices', 'search'));
-    }
-
-    public function tableEdit()
-    {
-        $search = trim((string) request('search'));
-        $invoices = Arh::where('SOURCE', 'Expedisi')
-            ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match
-                ->where('NOFAKTUR', 'like', "%{$search}%")
-                ->orWhere('CUSTOMER', 'like', "%{$search}%")))
-            ->paginate(20)
-            ->withQueryString();
-
-        return response()->json($invoices);
     }
 
     public function showEditInvoice($noInvoice)
@@ -355,12 +346,71 @@ class ExpedisiGenerateInvoiceController extends Controller
         return view('expedisi-invoice.show-edit', compact('invoice', 'details'));
     }
 
+    public function showEditInvoiceJson($noInvoice)
+    {
+        $invoice = Arh::where('NOFAKTUR', $noInvoice)->where('SOURCE', 'Expedisi')->first();
+        if (! $invoice) {
+            return response()->json(['status' => false, 'message' => 'Invoice tidak ditemukan'], 404);
+        }
+        try {
+            $this->ensureInvoiceEditable($invoice);
+        } catch (\RuntimeException $exception) {
+            return response()->json(['status' => false, 'message' => $exception->getMessage()], 422);
+        }
+        $rows = Expedisi::where('INVOICE', $noInvoice)->orderBy('NOSJ')->get();
+        $master = $rows->firstWhere('GRAND', '>', 0) ?? $rows->first();
+        if (! $master) {
+            return response()->json(['status' => false, 'message' => 'Data master invoice tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'master' => [
+                'invoice' => $master->INVOICE,
+                'customer_kode' => $master->CUSTOMER_KODE,
+                'customer' => $master->CUSTOMER,
+                'kendaraan' => $master->NAMA_KENDARAAN ?? '',
+                'driver' => $master->DRIVER ?? '',
+                'nomuat' => $master->NOMUAT ?? '',
+                'tgl_invoice' => $master->TGLINVOICE?->format('Y-m-d'),
+                'tgl_jt' => $invoice->TGLJT?->format('Y-m-d') ?? $master->TGLJT?->format('Y-m-d'),
+                'wilayah' => $master->WILAYAH ?? '',
+                'item' => $master->PESANAN ?? '',
+                'rute' => $master->rute ?? '',
+                'jumlah' => (float) $master->JUMLAH,
+                'harga' => (float) $master->HARGA,
+                'total' => (float) $master->TOTAL,
+                'diskon' => (float) $master->DISC,
+                'del_charge' => (float) $master->DC,
+                'ppn' => (float) $master->PPN,
+                'grand' => (float) $master->GRAND,
+                'bayar' => (float) $master->BAYAR,
+                'piutang' => (float) ($master->GRAND ?? 0) - (float) ($master->BAYAR ?? 0),
+                'keterangan' => $master->KETERANGAN ?? $invoice->KETERANGAN ?? '',
+            ],
+            'details' => $rows->map(fn ($row) => [
+                'nosj' => $row->NOSJ,
+                'jumlah' => (float) $row->JUMLAH,
+                'hargaaw' => (float) $row->hargaaw,
+                'total' => (float) $row->TOTAL,
+            ])->values(),
+        ]);
+    }
+
     public function updateEditInvoice(Request $request, $noInvoice)
     {
         $validated = $request->validate([
             'TGLFAKTUR' => ['required', 'date'],
             'TGLJT' => ['nullable', 'date', 'after_or_equal:TGLFAKTUR'],
             'KETERANGAN' => ['nullable', 'string', 'max:500'],
+            'item' => ['nullable', 'string', 'max:255'],
+            'rute' => ['nullable', 'string', 'max:255'],
+            'jumlah' => ['nullable', 'numeric', 'min:0'],
+            'harga' => ['nullable', 'numeric', 'min:0'],
+            'disc' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'del_charge' => ['nullable', 'numeric', 'min:0'],
+            'ppn' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'bayar' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         try {
@@ -375,24 +425,116 @@ class ExpedisiGenerateInvoiceController extends Controller
                     $validated['KETERANGAN'] = 'INVOICE DARI EXPEDISI';
                 }
 
-                $invoice->update([
-                    'TGLFAKTUR' => $validated['TGLFAKTUR'],
-                    'TGLJT' => $validated['TGLJT'] ?? null,
-                    'KETERANGAN' => $validated['KETERANGAN'],
-                    'USER_UPDATE' => $request->user()->name,
-                ]);
-                Expedisi::where('INVOICE', $noInvoice)->lockForUpdate()->update([
-                    'TGLINVOICE' => $validated['TGLFAKTUR'],
-                    'TGLJT' => $validated['TGLJT'] ?? null,
-                    'KETERANGAN' => $validated['KETERANGAN'],
-                ]);
+                $rows = Expedisi::where('INVOICE', $noInvoice)->lockForUpdate()->get();
+                $master = $rows->firstWhere('GRAND', '>', 0) ?? $rows->first();
+                if (! $master) {
+                    throw new \RuntimeException('Data master invoice tidak ditemukan');
+                }
+
+                $hasFinancial = array_key_exists('jumlah', $validated) || array_key_exists('harga', $validated)
+                    || array_key_exists('disc', $validated) || array_key_exists('del_charge', $validated)
+                    || array_key_exists('ppn', $validated) || array_key_exists('bayar', $validated);
+
+                if ($hasFinancial) {
+                    $jumlah = (float) ($validated['jumlah'] ?? $master->JUMLAH ?? 0);
+                    $harga = (float) ($validated['harga'] ?? $master->HARGA ?? 0);
+                    $discPersen = (float) ($validated['disc'] ?? $master->DISC ?? 0);
+                    $delCharge = (float) ($validated['del_charge'] ?? $master->DC ?? 0);
+                    $ppnPersen = (float) ($validated['ppn'] ?? $master->PPN ?? 0);
+                    $bayar = (float) ($validated['bayar'] ?? $master->BAYAR ?? 0);
+
+                    $subTotal = round($jumlah * $harga);
+                    $ndisc = round($subTotal * ($discPersen / 100));
+                    $total = round($subTotal - $ndisc);
+                    $ppnNominal = round($total * ($ppnPersen / 100));
+                    $grand = round($total + $ppnNominal + $delCharge);
+                    if ($grand < $bayar) {
+                        throw new \RuntimeException('Grand tidak boleh lebih kecil dari pembayaran yang sudah diterima');
+                    }
+                    $piutang = round($grand - $bayar);
+
+                    $master->update([
+                        'PESANAN' => $validated['item'] ?? $master->PESANAN,
+                        'rute' => $validated['rute'] ?? $master->rute,
+                        'JUMLAH' => $jumlah,
+                        'HARGA' => $harga,
+                        'DISC' => $discPersen,
+                        'NDISC' => $ndisc,
+                        'DC' => $delCharge,
+                        'TOTAL' => $total,
+                        'PPN' => $ppnPersen,
+                        'GRAND' => $grand,
+                        'BAYAR' => $bayar,
+                        'PIUTANG' => $piutang,
+                        'TGLINVOICE' => $validated['TGLFAKTUR'],
+                        'TGLJT' => $validated['TGLJT'] ?? $master->TGLJT,
+                        'KETERANGAN' => $validated['KETERANGAN'],
+                        'USEREDIT' => $request->user()->name,
+                    ]);
+
+                    $arh = Arh::where('NOFAKTUR', $noInvoice)->first();
+                    $arhData = [
+                        'TGLFAKTUR' => $validated['TGLFAKTUR'],
+                        'TGLJT' => $validated['TGLJT'] ?? $arh?->TGLJT,
+                        'CUSTOMER' => $master->CUSTOMER,
+                        'PIUTANG' => $piutang,
+                        'BAYAR' => $bayar,
+                        'SALDO' => $grand,
+                        'DISCOUNT' => $ndisc,
+                        'KETERANGAN' => $validated['KETERANGAN'],
+                        'STATUS' => $piutang > 0 ? 'OPEN' : 'PAID',
+                        'TGLLUNAS' => $piutang > 0 ? null : $validated['TGLFAKTUR'],
+                    ];
+                    if (! $arh) {
+                        Arh::create($arhData + ['NOFAKTUR' => $noInvoice, 'SOURCE' => 'Expedisi', 'USER' => $request->user()->name ?? 'SYSTEM']);
+                    } else {
+                        $arh->update($arhData + ['USER_UPDATE' => $request->user()->name ?? 'SYSTEM']);
+                    }
+
+                    // Sinkron kwitansi bila sudah ada (setara src_old: nilai kwitansi mengikuti nilai invoice)
+                    $kwitansi = Kwitansi::where('FDOK_TRANS', $noInvoice)->first();
+                    if ($kwitansi) {
+                        $kwitansi->update([
+                            'FNIL_DOK' => $grand,
+                            'TOTAL' => $total,
+                            'PPN' => $ppnPersen,
+                            'DISC' => $discPersen,
+                            'NDISC' => $ndisc,
+                            'USERINPUT' => $request->user()->name ?? 'SYSTEM',
+                        ]);
+                    }
+                } else {
+                    // Jalur lama (metadata only) — tetap dipakai test
+                    $invoice->update([
+                        'TGLFAKTUR' => $validated['TGLFAKTUR'],
+                        'TGLJT' => $validated['TGLJT'] ?? null,
+                        'KETERANGAN' => $validated['KETERANGAN'],
+                        'USER_UPDATE' => $request->user()->name,
+                    ]);
+                    Expedisi::where('INVOICE', $noInvoice)->lockForUpdate()->update([
+                        'TGLINVOICE' => $validated['TGLFAKTUR'],
+                        'TGLJT' => $validated['TGLJT'] ?? null,
+                        'KETERANGAN' => $validated['KETERANGAN'],
+                    ]);
+                }
             });
         } catch (\RuntimeException $exception) {
+            if ($request->wantsJson()) {
+                return response()->json(['status' => false, 'message' => $exception->getMessage()], 422);
+            }
+
             return back()->withInput()->with('error', $exception->getMessage());
         } catch (\Throwable $exception) {
             Log::error('Gagal memperbarui invoice expedisi.', ['invoice' => $noInvoice, 'exception' => $exception]);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => false, 'message' => 'Invoice gagal diperbarui. Periksa data lalu coba kembali.'], 500);
+            }
 
             return back()->withInput()->with('error', 'Invoice gagal diperbarui. Periksa data invoice lalu coba kembali.');
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['status' => true, 'message' => 'Invoice berhasil diperbarui.']);
         }
 
         return back()->with('success', 'Invoice berhasil diperbarui. Tidak ada jurnal yang dibuat.');
@@ -400,9 +542,8 @@ class ExpedisiGenerateInvoiceController extends Controller
 
     private function ensureInvoiceEditable(Arh $invoice): void
     {
-        if ((float) $invoice->BAYAR > 0 || $invoice->STATUS === 'PAID'
-            || Kwitansi::where('NOFAKTUR', $invoice->NOFAKTUR)->exists()) {
-            throw new \RuntimeException('Invoice yang sudah memiliki pembayaran atau kwitansi tidak dapat diedit.');
+        if ((float) $invoice->BAYAR > 0) {
+            throw new \RuntimeException('Invoice sudah memiliki pembayaran. Silakan hubungi admin.');
         }
         if ($this->periodLocks->isLocked($invoice->TGLFAKTUR)) {
             throw new \RuntimeException($this->periodLocks->lockedMessage($invoice->TGLFAKTUR));

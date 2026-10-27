@@ -90,19 +90,21 @@ class ExpedisiKwitansiController extends Controller
                 }
 
                 Kwitansi::create([
-                    'NO_KWT' => $noKwt,
-                    'TGL_KWT' => $today,
-                    'NOFAKTUR' => $invoice,
-                    'SALDO_FAKTUR' => $grand,
-                    'NILAI_BAYAR' => $grand,
-                    'DISCOUNT' => 0,
-                    'RETUR' => 0,
-                    'SISA_FAKTUR' => 0,
-                    'JENIS_KWT' => 'Expedisi',
+                    'NOKWT' => $noKwt,
+                    'TGL' => $today,
+                    'FDOK_TRANS' => $invoice,
+                    'TGL_TRANS' => $master->TGLINVOICE?->format('Y-m-d'),
                     'CUSTOMER' => $master->CUSTOMER,
-                    'NAMACUST' => $namaCust,
-                    'KETERANGAN' => 'PENJUALAN EXPEDISI PADA '.$namaCust.', INVOICE : '.$invoice,
-                    'user' => auth()->user()->name ?? null,
+                    'NOSJ' => $rows->pluck('NOSJ')->implode(','),
+                    'FKETERANG' => 'PENJUALAN EXPEDISI PADA '.$namaCust.', INVOICE : '.$invoice,
+                    'FNAMA' => $namaCust,
+                    'FNIL_DOK' => $grand,
+                    'TOTAL' => $master->TOTAL ?? 0,
+                    'PPN' => $master->PPN ?? 0,
+                    'DISC' => $master->DISC ?? 0,
+                    'NDISC' => $master->NDISC ?? 0,
+                    'USERINPUT' => auth()->user()->name ?? null,
+                    'JENIS' => $master->JENIS ?? 'EKS',
                 ]);
 
                 return $noKwt;
@@ -141,7 +143,7 @@ class ExpedisiKwitansiController extends Controller
                     $row->save();
                 }
 
-                Kwitansi::where('NO_KWT', $noKwt)->delete();
+                Kwitansi::where('NOKWT', $noKwt)->delete();
             });
         } catch (RuntimeException $e) {
             return redirect()->route('expedisi-kwitansi.index')
@@ -284,10 +286,10 @@ class ExpedisiKwitansiController extends Controller
     {
         $year = now()->format('Y');
 
-        $last = Kwitansi::where('NO_KWT', 'like', 'KW'.$year.'%')
+        $last = Kwitansi::where('NOKWT', 'like', 'KW'.$year.'%')
             ->lockForUpdate()
-            ->orderByDesc('NO_KWT')
-            ->value('NO_KWT');
+            ->orderByDesc('NOKWT')
+            ->value('NOKWT');
 
         if (! $last) {
             return 'KW'.$year.'0000001';

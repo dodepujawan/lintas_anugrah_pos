@@ -552,6 +552,7 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
         ->except(['show'])
         ->parameters(['price-customer' => 'priceCus']);
     Route::get('price-customer/{kodecus}/prices', [PriceCusController::class, 'customerPrices'])->name('price-customer.customer-prices');
+    Route::get('price-customer/{kodecus}/price', [PriceCusController::class, 'getPrice'])->name('price-customer.price');
     Route::post('price-customer/{kodecus}/update-all', [PriceCusController::class, 'updateAll'])->name('price-customer.update-all');
     Route::post('price-customer/update-row', [PriceCusController::class, 'saveRow'])->name('price-customer.update-row');
     Route::resource('price-rent', PricedinginController::class)
@@ -655,6 +656,8 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
         ->name('expedisi-invoice-gen.index');
     Route::get('expedisi-invoice-gen/{noInvoice}/edit', [ExpedisiGenerateInvoiceController::class, 'showEditInvoice'])
         ->name('expedisi-invoice-gen.edit');
+    Route::get('expedisi-invoice-gen/{noInvoice}/show', [ExpedisiGenerateInvoiceController::class, 'showEditInvoiceJson'])
+        ->name('expedisi-invoice-gen.show');
     Route::put('expedisi-invoice-gen/{noInvoice}', [ExpedisiGenerateInvoiceController::class, 'updateEditInvoice'])
         ->name('expedisi-invoice-gen.update');
 
