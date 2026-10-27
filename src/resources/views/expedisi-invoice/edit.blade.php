@@ -509,7 +509,9 @@
                 return;
             }
             hideModal('modal_invoice_edit');
-            window.location.reload();
+            const detailUrl = @json(route('expedisi-invoice.show', ['noInvoice' => '__INVOICE__']))
+                .replace('__INVOICE__', encodeURIComponent(invoice));
+            window.location.href = `${detailUrl}?auto_print=1`;
         } catch (e) {
             showAlert('Terjadi kesalahan: ' + e.message);
         } finally {

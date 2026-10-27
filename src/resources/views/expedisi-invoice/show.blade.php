@@ -99,7 +99,7 @@
 (() => {
     const invoiceNo = @json($invoice->NOFAKTUR);
     const textUrlTemplate = @json(route('expedisi-invoice.text', ['noInvoice' => '__INVOICE__']));
-    const autoPrintInvoice = @json(session('autoPrintInvoice'));
+    const autoPrintInvoice = @json($autoPrintInvoice);
     const printButton = document.getElementById('btnDirectPrintInvoice');
     const printStatus = document.getElementById('directPrintStatus');
     const originalButtonContent = printButton.innerHTML;

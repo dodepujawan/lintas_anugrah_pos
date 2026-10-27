@@ -97,12 +97,13 @@ class ExpedisiInvoiceController extends Controller
         ]);
     }
 
-    public function show(string $noInvoice)
+    public function show(string $noInvoice, Request $request)
     {
         $invoice = Arh::where('NOFAKTUR', $noInvoice)->firstOrFail();
         $details = Expedisi::where('INVOICE', $noInvoice)->where('JENIS', 'EKS')->get();
+        $autoPrintInvoice = $request->boolean('auto_print') ? $noInvoice : session('autoPrintInvoice');
 
-        return view('expedisi-invoice.show', compact('invoice', 'details'));
+        return view('expedisi-invoice.show', compact('invoice', 'details', 'autoPrintInvoice'));
     }
 
     public function editGabung(string $noInvoice)
