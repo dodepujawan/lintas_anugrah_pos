@@ -168,7 +168,7 @@
                         <label class="form-label">Pajak</label>
                         <div class="input-group input-group-sm">
                             <span class="input-group-text">%</span>
-                            <input type="text" id="pajak_rent_dingin" class="form-control" value="0" readonly>
+                         <input type="text" id="pajak_rent_dingin" name="PPN" class="form-control" value="0" readonly>
                         </div>
                     </div>
                     <div class="col-md-2">
@@ -430,6 +430,73 @@
 
     const formatRupiah = (value) => new Intl.NumberFormat('id-ID').format(Number(value || 0));
 
+    function parseCurrencyNumber(value) {
+        if (value === null || value === undefined || value === '') return 0;
+
+        let cleaned = String(value)
+            .replace(/Rp/gi, '')
+            .replace(/\s+/g, '')
+            .replace(/[^0-9,.-]/g, '');
+
+        if (!cleaned) return 0;
+
+        if (cleaned.includes(',') && cleaned.includes('.')) {
+            const lastComma = cleaned.lastIndexOf(',');
+            const lastDot = cleaned.lastIndexOf('.');
+            const decimalSep = lastComma > lastDot ? ',' : '.';
+            const thousandSep = decimalSep === ',' ? '.' : ',';
+            const normalized = cleaned.replace(new RegExp(`\\${thousandSep}`, 'g'), '').replace(decimalSep, '.');
+            return Number(normalized || 0);
+        }
+
+        if (cleaned.includes(',')) {
+            const commaParts = cleaned.split(',');
+            if (commaParts.length > 2) {
+                return Number(commaParts.join('').replace(/,/g, '.'));
+            }
+            if (commaParts[1]?.length <= 2) {
+                return Number(commaParts[0].replace(/\./g, '') + '.' + commaParts[1]);
+            }
+            return Number(commaParts.join('').replace(/\./g, ''));
+        }
+
+        if (cleaned.includes('.')) {
+            const dotParts = cleaned.split('.');
+            if (dotParts.length > 2) {
+                return Number(dotParts.join(''));
+            }
+            if (dotParts[1] && dotParts[1].length === 3) {
+                return Number(dotParts.join(''));
+            }
+            if (dotParts[1] && dotParts[1].length <= 2) {
+                return Number(cleaned);
+            }
+            return Number(cleaned.replace(/\./g, ''));
+        }
+
+        return Number(cleaned);
+    }
+
+    function normalizeFormCurrencyFields() {
+        const hargaInput = document.getElementById('harga_rent_dingin');
+        const totalInput = document.getElementById('total_rent_dingin');
+        const harga = parseCurrencyNumber(hargaInput?.value || 0);
+        const grand = parseCurrencyNumber(totalInput?.value || 0);
+        const jumlah = Number(document.getElementById('jml_hari_rent_dingin').value || 0);
+
+        if (hargaInput) hargaInput.value = String(harga);
+        if (totalInput) {
+            totalInput.value = String(grand);
+            totalInput.setAttribute('value', String(grand));
+        }
+
+        const formData = new FormData(form);
+        formData.set('HARGA', String(harga));
+        formData.set('GRAND', String(grand));
+        formData.set('JUMLAH', String(jumlah));
+        return formData;
+    }
+
     function setButtonToSaveMode() {
         document.getElementById('btnSimpanRentPendinginSurjalDiv').classList.remove('d-none');
         const saveBtn = document.getElementById('btnSimpanRentPendinginSurjal');
@@ -463,17 +530,9 @@
         }
     }
 
-    function dataModeRentDgn(mode) {
-        if (mode === 'update') {
-            setButtonToUpdateMode();
-            return;
-        }
-        setButtonToSaveMode();
-    }
-
     function calculateTotalDgn() {
         const quantity = Number(document.getElementById('jml_hari_rent_dingin').value || 0);
-        const price = Number(String(document.getElementById('harga_rent_dingin').value || '0').replace(/[Rp.,\s]/g, ''));
+        const price = parseCurrencyNumber(document.getElementById('harga_rent_dingin').value || 0);
         const discount = Number(document.getElementById('discount_rent_dingin').value || 0);
         const subtotal = quantity * price;
         const dpp = subtotal - (subtotal * (discount / 100));
@@ -486,8 +545,15 @@
         document.getElementById('total_rent_dingin').setAttribute('value', String(total));
     }
 
-    async function fetchJson(url) {
-        const response = await fetch(url, { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+    async function fetchJson(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                ...(options.headers || {}),
+            },
+        });
         const payload = await response.json();
         if (!response.ok) {
             throw new Error(payload.message || 'Permintaan gagal.');
@@ -586,269 +652,430 @@
         `).join('');
     }
 
+    function renderRentRows(tbodyId, rows, emptyMessage, columns) {
+        const tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="${columns}" class="text-center text-muted py-3">${emptyMessage}</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = rows;
+    }
+
     async function loadMuatRows() {
-        const search = document.getElementById('filter_rent_dgn')?.value?.trim() || '';
-        const tglMulai = document.getElementById('filter_tgl_mulai_rentdgn')?.value || '';
-        const tglAkhir = document.getElementById('filter_tgl_akhir_rentdgn')?.value || '';
         const tbody = document.getElementById('muatRowsRentDgn');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-3">Memuat data...</td></tr>';
+        const q = document.getElementById('filter_rent_dgn').value.trim();
 
         try {
-            const payload = await fetchJson(`{{ route('rent-pendingin.data.muat') }}?search=${encodeURIComponent(search)}&tgl_mulai=${encodeURIComponent(tglMulai)}&tgl_akhir=${encodeURIComponent(tglAkhir)}`);
+            const payload = await fetchJson(`{{ route('rent-pendingin.data.muat') }}?search=${encodeURIComponent(q)}`);
             const rows = payload.data || [];
-
-            if (!rows.length) {
-                tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-3">Tidak ada data No Muat.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = rows.map((row, idx) => `
+            renderRentRows('muatRowsRentDgn', rows.map((row, index) => `
                 <tr>
-                    <td>${idx + 1}</td>
-                    <td>${row.NOMUAT || '-'}</td>
-                    <td>${row.TGLMUAT || '-'}</td>
-                    <td>${row.CUSTOMER || '-'}</td>
-                    <td>${row.PESANAN || '-'}</td>
-                    <td>${row.JUMLAH || 0}</td>
-                    <td>Rp ${formatRupiah(row.HARGA || 0)}</td>
-                    <td>${row.DISC || 0}%</td>
-                    <td>Rp ${formatRupiah(row.GRAND || 0)}</td>
-                    <td>${row.NOSJ || '-'}</td>
-                    <td><button type="button" class="btn btn-sm btn-primary pick-rent-muat" data-nomuat="${row.NOMUAT || ''}">Pilih</button></td>
-                </tr>
-            `).join('');
+                    <td>${index + 1}</td><td>${row.NOMUAT || '-'}</td><td>${row.TGLMUAT || '-'}</td>
+                    <td>${row.CUSTOMER || '-'}</td><td>${row.PESANAN || '-'}</td><td>${row.JUMLAH || 0}</td>
+                    <td class="text-end">Rp ${formatRupiah(row.HARGA || 0)}</td><td>${row.DISC || 0}%</td>
+                    <td class="text-end">Rp ${formatRupiah(row.GRAND || 0)}</td><td>${row.NOSJ || '-'}</td>
+                    <td class="text-nowrap">
+                        <button type="button" class="btn btn-sm btn-primary pick-rent-muat" data-nomuat="${row.NOMUAT || ''}">Pilih</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger delete-rent-muat" data-id="${row.id || ''}" data-nomuat="${row.NOMUAT || ''}" title="Kembalikan ke Surat Jalan"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>`), 'Data No Muat tidak ditemukan.', 11);
         } catch (error) {
-            tbody.innerHTML = '<tr><td colspan="11" class="text-center text-danger py-3">Gagal memuat data.</td></tr>';
-            console.error(error);
+            renderRentRows('muatRowsRentDgn', [], error.message || 'Gagal memuat data No Muat.', 11);
         }
     }
 
     async function loadSurjalRows() {
-        const search = document.getElementById('filter_surjal_rent_dgn')?.value?.trim() || '';
-        const tglMulai = document.getElementById('filter_tgl_mulai')?.value || '';
-        const tglAkhir = document.getElementById('filter_tgl_akhir')?.value || '';
         const tbody = document.getElementById('surjalRowsRentDgn');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-3">Memuat data...</td></tr>';
+        const q = document.getElementById('filter_surjal_rent_dgn').value.trim();
 
         try {
-            const payload = await fetchJson(`{{ route('rent-pendingin.data.surjal') }}?search=${encodeURIComponent(search)}&tgl_mulai=${encodeURIComponent(tglMulai)}&tgl_akhir=${encodeURIComponent(tglAkhir)}`);
+            const payload = await fetchJson(`{{ route('rent-pendingin.data.surjal') }}?search=${encodeURIComponent(q)}`);
             const rows = payload.data || [];
-
-            if (!rows.length) {
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-3">Tidak ada data Surat Jalan.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = rows.map((row, idx) => `
+            renderRentRows('surjalRowsRentDgn', rows.map((row, index) => `
                 <tr>
-                    <td>${idx + 1}</td>
-                    <td>${row.NOSJ || '-'}</td>
-                    <td>${row.tglsj || '-'}</td>
-                    <td>${row.CUSTOMER || '-'}</td>
-                    <td>${row.PESANAN || '-'}</td>
-                    <td>${row.JUMLAH || 0}</td>
-                    <td>Rp ${formatRupiah(row.HARGA || 0)}</td>
-                    <td>${row.DISC || 0}%</td>
-                    <td>Rp ${formatRupiah(row.GRAND || 0)}</td>
-                    <td><button type="button" class="btn btn-sm btn-primary pick-rent-surjal" data-nosj="${row.NOSJ || ''}">Pilih</button></td>
-                </tr>
-            `).join('');
+                    <td>${index + 1}</td><td>${row.NOSJ || '-'}</td><td>${row.tglsj || '-'}</td>
+                    <td>${row.CUSTOMER || '-'}</td><td>${row.PESANAN || '-'}</td><td>${row.JUMLAH || 0}</td>
+                    <td class="text-end">Rp ${formatRupiah(row.HARGA || 0)}</td><td>${row.DISC || 0}%</td>
+                    <td class="text-end">Rp ${formatRupiah(row.GRAND || 0)}</td>
+                    <td class="text-nowrap">
+                        <button type="button" class="btn btn-sm btn-primary pick-rent-surjal" data-nosj="${row.NOSJ || ''}">Pilih</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger delete-rent-surjal" data-id="${row.id || ''}" data-nosj="${row.NOSJ || ''}" title="Hapus Surat Jalan"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>`), 'Data Surat Jalan tidak ditemukan.', 10);
         } catch (error) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger py-3">Gagal memuat data.</td></tr>';
-            console.error(error);
+            renderRentRows('surjalRowsRentDgn', [], error.message || 'Gagal memuat data Surat Jalan.', 10);
         }
     }
 
+    function fillFormFromRecord(data = {}) {
+        const setValue = (id, value, fallback = '') => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.value = value ?? fallback;
+        };
+
+        const formatCurrencyInput = (value) => {
+            const numeric = Number(value || 0);
+            return Number.isFinite(numeric) ? formatRupiah(numeric) : '0';
+        };
+
+        const rawSj = data.NOSJ || '';
+        const rawMuat = data.NOMUAT || '';
+        const selectedCustomerCode = data.CUSTOMER_KODE || data.CUSTOMER || '';
+        const selectedCustomerName = data.NAMACUST || data.CUSTOMER_NAME || data.CUSTOMER || '';
+        const selectedDriverCode = data.DRIVER || '';
+        const selectedDriverName = data.NAMA_DRIVER || data.DRIVER || '';
+        const selectedVehicleCode = data.KENDARAAN || '';
+        const selectedVehicleName = data.NAMA_KENDARAAN || data.KENDARAAN || '';
+
+        setValue('no_muat_rent_dingin', rawMuat);
+        setValue('tanggal_rent_dingin', data.TGLMUAT || '{{ now()->format('Y-m-d') }}');
+        setValue('no_surjal_rent_dingin', rawSj);
+        setValue('tanggal_surjal_rent_dingin', data.tglsj || '{{ now()->format('Y-m-d') }}');
+
+        setValue('customer_rent_dingin_id', selectedCustomerCode);
+        setValue('customer_rent_dingin', selectedCustomerName);
+        setValue('customer_kode_dingin', selectedCustomerCode);
+        setValue('nama_penerima_rent_dingin', data.P_NAMA || selectedCustomerName || '');
+        setValue('telpon_rent_dingin', data.P_PHONE || '');
+        setValue('alamat_rent_dingin', data.P_ALAMAT || '');
+
+        setValue('item_rent_dingin', data.PESANAN || '');
+        setValue('jml_hari_rent_dingin', data.JUMLAH ?? 1);
+        setValue('harga_rent_dingin', formatCurrencyInput(data.HARGA));
+        setValue('discount_rent_dingin', data.DISC ?? 0);
+        setValue('keterangan_rent_dingin', data.catatan || '');
+
+        setValue('driver_rent_dingin_id', selectedDriverCode);
+        setValue('driver_rent_dingin', selectedDriverName);
+        setValue('kendaraan_rent_dingin_id', selectedVehicleCode);
+        setValue('kendaraan_rent_dingin', selectedVehicleName);
+
+        const jumlah = Number(data.JUMLAH ?? 0);
+        const harga = Number(data.HARGA ?? 0);
+        const discount = Number(data.DISC ?? 0);
+        const subtotal = jumlah * harga;
+        const dpp = subtotal - (subtotal * (discount / 100));
+        const total = Number(data.GRAND ?? dpp);
+
+        document.getElementById('sub_total_rent_dingin').value = formatRupiah(subtotal);
+        document.getElementById('dpp_rent_dingin').value = formatRupiah(dpp);
+        document.getElementById('pajak_rent_dingin').value = data.PPN ?? 0;
+        document.getElementById('total_rent_dingin').value = formatRupiah(total);
+        document.getElementById('total_rent_dingin').setAttribute('value', String(total));
+
+        const saveBtn = document.getElementById('btnSimpanRentPendinginSurjal');
+        if (rawSj) {
+            setButtonToUpdateMode();
+            saveBtn.dataset.mode = 'update';
+            document.getElementById('btnPrintSuratJalanRent').dataset.sj = rawSj;
+            document.getElementById('divPrintSuratJalanRent').classList.remove('d-none');
+            return;
+        }
+
+        setButtonToSaveMode();
+        saveBtn.dataset.mode = 'save';
+    }
+
+    document.getElementById('customerSearchRentDgn')?.addEventListener('input', loadCustomers);
+    document.getElementById('customerRowsRentDgn')?.addEventListener('click', (event) => {
+        const button = event.target.closest('.pick-customer-rent-dingin');
+        if (!button) return;
+
+        const code = button.dataset.code || '';
+        const name = button.dataset.name || '';
+        const alamat = button.dataset.alamat || '';
+        const phone = button.dataset.phone || '';
+
+        document.getElementById('customer_rent_dingin_id').value = code;
+        document.getElementById('customer_rent_dingin').value = name;
+        document.getElementById('customer_kode_dingin').value = code;
+        document.getElementById('nama_penerima_rent_dingin').value = name;
+        document.getElementById('alamat_rent_dingin').value = alamat;
+        document.getElementById('telpon_rent_dingin').value = phone;
+        customerModal.hide();
+    });
+
+    document.getElementById('itemSearchRentDgn')?.addEventListener('input', loadItems);
+    document.getElementById('itemRowsRentDgn')?.addEventListener('click', (event) => {
+        const button = event.target.closest('.pick-item-rent-dingin');
+        if (!button) return;
+
+        const item = button.dataset.item || '';
+        const price = button.dataset.price || 0;
+
+        document.getElementById('item_rent_dingin_id').value = button.dataset.id || '';
+        document.getElementById('item_rent_dingin').value = item;
+        document.getElementById('jml_hari_rent_dingin').value = '1';
+        document.getElementById('harga_rent_dingin').value = formatRupiah(price);
+        calculateTotalDgn();
+        itemModal.hide();
+    });
+
+    document.getElementById('driverSearchRentDgn')?.addEventListener('input', loadDrivers);
+    document.getElementById('driverRowsRentDgn')?.addEventListener('click', (event) => {
+        const button = event.target.closest('.pick-driver-rent-dingin');
+        if (!button) return;
+
+        document.getElementById('driver_rent_dingin_id').value = button.dataset.code || '';
+        document.getElementById('driver_rent_dingin').value = button.dataset.name || '';
+        driverModal.hide();
+    });
+
+    document.getElementById('vehicleSearchRentDgn')?.addEventListener('input', loadVehicles);
+    document.getElementById('vehicleRowsRentDgn')?.addEventListener('click', (event) => {
+        const button = event.target.closest('.pick-vehicle-rent-dingin');
+        if (!button) return;
+
+        document.getElementById('kendaraan_rent_dingin_id').value = button.dataset.code || '';
+        document.getElementById('kendaraan_rent_dingin').value = button.dataset.name || '';
+        vehicleModal.hide();
+    });
+
+    document.getElementById('muatRowsRentDgn')?.addEventListener('click', async (event) => {
+        const button = event.target.closest('.pick-rent-muat');
+        if (!button) return;
+
+        const nomuat = (button.dataset.nomuat || '').trim();
+        if (!nomuat) return;
+
+        try {
+            const payload = await fetchJson(`{{ url('rent-pendingin/show/muat') }}/${encodeURIComponent(nomuat)}`);
+            if (!payload?.success) {
+                throw new Error(payload?.message || 'Data No Muat tidak ditemukan.');
+            }
+            muatModal.hide();
+            fillFormFromRecord(payload.data || {});
+            const rawSj = payload.data?.NOSJ || '';
+            if (rawSj) {
+                document.getElementById('no_surjal_rent_dingin').value = rawSj;
+                document.getElementById('btnSimpanRentPendinginSurjal').dataset.mode = 'update';
+            }
+        } catch (error) {
+            alert(error.message || 'Gagal mengambil data No Muat.');
+        }
+    });
+
+    document.getElementById('surjalRowsRentDgn')?.addEventListener('click', async (event) => {
+        const button = event.target.closest('.pick-rent-surjal');
+        if (!button) return;
+
+        const nosj = (button.dataset.nosj || '').trim();
+        if (!nosj) return;
+
+        try {
+            const payload = await fetchJson(`{{ url('rent-pendingin/show/surjal') }}/${encodeURIComponent(nosj)}`);
+            if (!payload?.success) {
+                throw new Error(payload?.message || 'Data Surat Jalan tidak ditemukan.');
+            }
+            surjalModal.hide();
+            fillFormFromRecord(payload.data || {});
+            document.getElementById('no_surjal_rent_dingin').value = payload.data?.NOSJ || nosj;
+            document.getElementById('btnSimpanRentPendinginSurjal').dataset.mode = 'update';
+        } catch (error) {
+            alert(error.message || 'Gagal mengambil data Surat Jalan.');
+        }
+    });
+
+    document.getElementById('muatRowsRentDgn')?.addEventListener('click', async (event) => {
+        const button = event.target.closest('.delete-rent-muat');
+        if (!button) return;
+
+        const nomuat = button.dataset.nomuat || '';
+        if (!button.dataset.id || !confirm(`No Muat ${nomuat} akan dikembalikan menjadi Surat Jalan. Lanjutkan?`)) return;
+
+        try {
+            await fetchJson(`{{ url('rent-pendingin/muat') }}/${encodeURIComponent(button.dataset.id)}/reset` , {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            await loadMuatRows();
+            alert('Data berhasil dikembalikan ke Surat Jalan.');
+        } catch (error) {
+            alert(error.message || 'Gagal mengembalikan No Muat.');
+        }
+    });
+
+    document.getElementById('surjalRowsRentDgn')?.addEventListener('click', async (event) => {
+        const button = event.target.closest('.delete-rent-surjal');
+        if (!button) return;
+
+        const nosj = button.dataset.nosj || '';
+        if (!button.dataset.id || !confirm(`Surat Jalan ${nosj} akan dihapus. Lanjutkan?`)) return;
+
+        try {
+            await fetchJson(`{{ url('rent-pendingin/surjal') }}/${encodeURIComponent(button.dataset.id)}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            await loadSurjalRows();
+            alert('Surat Jalan berhasil dihapus.');
+        } catch (error) {
+            alert(error.message || 'Gagal menghapus Surat Jalan.');
+        }
+    });
+
+    document.getElementById('customer_rent_dingin_btn')?.addEventListener('click', async () => {
+        customerModal.show();
+        await loadCustomers();
+    });
+    document.getElementById('item_rent_dingin_btn')?.addEventListener('click', async () => {
+        if (!document.getElementById('customer_rent_dingin_id').value) {
+            alert('Silakan pilih customer terlebih dahulu.');
+            return;
+        }
+        itemModal.show();
+        await loadItems();
+    });
+    document.getElementById('driver_rent_dingin_btn')?.addEventListener('click', async () => {
+        driverModal.show();
+        await loadDrivers();
+    });
+    document.getElementById('kendaraan_rent_dingin_btn')?.addEventListener('click', async () => {
+        vehicleModal.show();
+        await loadVehicles();
+    });
     document.getElementById('no_muat_rent_dingin_btn')?.addEventListener('click', async () => {
-        await loadMuatRows();
         muatModal.show();
+        await loadMuatRows();
     });
     document.getElementById('no_surjal_rent_dingin_btn')?.addEventListener('click', async () => {
-        await loadSurjalRows();
         surjalModal.show();
+        await loadSurjalRows();
     });
+
+    ['harga_rent_dingin', 'jml_hari_rent_dingin', 'discount_rent_dingin'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', calculateTotalDgn);
+        }
+    });
+
     document.getElementById('btn_filter_rent_dgn')?.addEventListener('click', loadMuatRows);
     document.getElementById('btn_filter_surjal_rent_dgn')?.addEventListener('click', loadSurjalRows);
 
-    document.addEventListener('click', async (event) => {
-        const muatButton = event.target.closest('.pick-rent-muat');
-        if (muatButton) {
-            const nomuat = muatButton.dataset.nomuat;
-            if (!nomuat) return;
-
-            try {
-                const payload = await fetchJson(`{{ url('rent-pendingin/show/muat') }}/${encodeURIComponent(nomuat)}`);
-                const d = payload.data || {};
-                muatModal.hide();
-
-                document.getElementById('no_muat_rent_dingin').value = d.NOMUAT || '';
-                document.getElementById('tanggal_rent_dingin').value = d.TGLMUAT || '{{ now()->format('Y-m-d') }}';
-                document.getElementById('no_surjal_rent_dingin').value = d.NOSJ || '';
-                document.getElementById('tanggal_surjal_rent_dingin').value = d.tglsj || '{{ now()->format('Y-m-d') }}';
-                document.getElementById('customer_rent_dingin_id').value = d.CUSTOMER_KODE || '';
-                document.getElementById('customer_rent_dingin').value = d.CUSTOMER || '';
-                document.getElementById('customer_kode_dingin').value = d.CUSTOMER_KODE || '';
-                document.getElementById('nama_penerima_rent_dingin').value = d.P_NAMA || '';
-                document.getElementById('telpon_rent_dingin').value = d.P_PHONE || '';
-                document.getElementById('alamat_rent_dingin').value = d.P_ALAMAT || '';
-                document.getElementById('item_rent_dingin').value = d.PESANAN || '';
-                document.getElementById('driver_rent_dingin_id').value = d.DRIVER || '';
-                document.getElementById('driver_rent_dingin').value = d.NAMA_DRIVER || '';
-                document.getElementById('kendaraan_rent_dingin_id').value = d.KENDARAAN || '';
-                document.getElementById('kendaraan_rent_dingin').value = d.NAMA_KENDARAAN || '';
-                document.getElementById('jml_hari_rent_dingin').value = d.JUMLAH || 1;
-                document.getElementById('harga_rent_dingin').value = formatRupiah(d.HARGA || 0);
-                document.getElementById('discount_rent_dingin').value = d.DISC || 0;
-                document.getElementById('keterangan_rent_dingin').value = d.catatan || '';
-                document.getElementById('btnPrintSuratJalanRent').dataset.sj = d.NOSJ || '';
-                calculateTotalDgn();
-                setButtonToUpdateMode();
-            } catch (error) {
-                console.error(error);
-                alert('Gagal mengambil detail No Muat.');
-            }
+    document.getElementById('btnPrintSuratJalanRent')?.addEventListener('click', () => {
+        const nosj = document.getElementById('btnPrintSuratJalanRent').dataset.sj;
+        if (!nosj) {
+            alert('Surat Jalan belum tersedia untuk dicetak.');
             return;
         }
 
-        const surjalButton = event.target.closest('.pick-rent-surjal');
-        if (surjalButton) {
-            const nosj = surjalButton.dataset.nosj;
-            if (!nosj) return;
-
-            try {
-                const payload = await fetchJson(`{{ url('rent-pendingin/show/surjal') }}/${encodeURIComponent(nosj)}`);
-                const d = payload.data || {};
-                surjalModal.hide();
-
-                document.getElementById('no_muat_rent_dingin').value = d.NOMUAT || '';
-                document.getElementById('tanggal_rent_dingin').value = d.TGLMUAT || '{{ now()->format('Y-m-d') }}';
-                document.getElementById('no_surjal_rent_dingin').value = d.NOSJ || '';
-                document.getElementById('tanggal_surjal_rent_dingin').value = d.tglsj || '{{ now()->format('Y-m-d') }}';
-                document.getElementById('customer_rent_dingin_id').value = d.CUSTOMER_KODE || '';
-                document.getElementById('customer_rent_dingin').value = d.CUSTOMER || '';
-                document.getElementById('customer_kode_dingin').value = d.CUSTOMER_KODE || '';
-                document.getElementById('nama_penerima_rent_dingin').value = d.P_NAMA || '';
-                document.getElementById('telpon_rent_dingin').value = d.P_PHONE || '';
-                document.getElementById('alamat_rent_dingin').value = d.P_ALAMAT || '';
-                document.getElementById('item_rent_dingin').value = d.PESANAN || '';
-                document.getElementById('driver_rent_dingin_id').value = d.DRIVER || '';
-                document.getElementById('driver_rent_dingin').value = d.NAMA_DRIVER || '';
-                document.getElementById('kendaraan_rent_dingin_id').value = d.KENDARAAN || '';
-                document.getElementById('kendaraan_rent_dingin').value = d.NAMA_KENDARAAN || '';
-                document.getElementById('jml_hari_rent_dingin').value = d.JUMLAH || 1;
-                document.getElementById('harga_rent_dingin').value = formatRupiah(d.HARGA || 0);
-                document.getElementById('discount_rent_dingin').value = d.DISC || 0;
-                document.getElementById('keterangan_rent_dingin').value = d.catatan || '';
-                document.getElementById('btnPrintSuratJalanRent').dataset.sj = d.NOSJ || '';
-                calculateTotalDgn();
-                setButtonToUpdateMode();
-            } catch (error) {
-                console.error(error);
-                alert('Gagal mengambil detail Surat Jalan.');
-            }
-            return;
-        }
-
-        const customerButton = event.target.closest('.pick-customer-rent-dingin');
-        if (customerButton) {
-            document.getElementById('customer_rent_dingin_id').value = customerButton.dataset.code;
-            document.getElementById('customer_rent_dingin').value = customerButton.dataset.name;
-            document.getElementById('customer_kode_dingin').value = customerButton.dataset.code;
-            document.getElementById('nama_penerima_rent_dingin').value = customerButton.dataset.name;
-            document.getElementById('telpon_rent_dingin').value = customerButton.dataset.phone || '';
-            document.getElementById('alamat_rent_dingin').value = customerButton.dataset.alamat || '';
-            customerModal.hide();
-            return;
-        }
-
-        const itemButton = event.target.closest('.pick-item-rent-dingin');
-        if (itemButton) {
-            document.getElementById('item_rent_dingin_id').value = itemButton.dataset.id;
-            document.getElementById('item_rent_dingin').value = itemButton.dataset.item;
-            document.getElementById('harga_rent_dingin').value = formatRupiah(itemButton.dataset.price || 0);
-            document.getElementById('jml_hari_rent_dingin').value = 1;
-            calculateTotalDgn();
-            itemModal.hide();
-            return;
-        }
-
-        const driverButton = event.target.closest('.pick-driver-rent-dingin');
-        if (driverButton) {
-            document.getElementById('driver_rent_dingin_id').value = driverButton.dataset.code;
-            document.getElementById('driver_rent_dingin').value = driverButton.dataset.name;
-            driverModal.hide();
-            return;
-        }
-
-        const vehicleButton = event.target.closest('.pick-vehicle-rent-dingin');
-        if (vehicleButton) {
-            document.getElementById('kendaraan_rent_dingin_id').value = vehicleButton.dataset.code;
-            document.getElementById('kendaraan_rent_dingin').value = vehicleButton.dataset.name;
-            vehicleModal.hide();
-            return;
-        }
+        window.open(`{{ url('rent-pendingin/print/surjal') }}/${encodeURIComponent(nosj)}`, '_blank');
     });
 
-    document.getElementById('item_rent_dingin_btn').addEventListener('click', async () => {
-        await loadItems();
-        itemModal.show();
-    });
-    document.getElementById('itemSearchRentDgn').addEventListener('input', loadItems);
-
-    document.getElementById('driver_rent_dingin_btn').addEventListener('click', async () => {
-        await loadDrivers();
-        driverModal.show();
-    });
-    document.getElementById('driverSearchRentDgn').addEventListener('input', loadDrivers);
-
-    document.getElementById('kendaraan_rent_dingin_btn').addEventListener('click', async () => {
-        await loadVehicles();
-        vehicleModal.show();
-    });
-    document.getElementById('vehicleSearchRentDgn').addEventListener('input', loadVehicles);
-
-    document.getElementById('jml_hari_rent_dingin').addEventListener('input', calculateTotalDgn);
-    document.getElementById('discount_rent_dingin').addEventListener('input', calculateTotalDgn);
-    document.getElementById('harga_rent_dingin').addEventListener('input', calculateTotalDgn);
-
-    const btnPrint = document.getElementById('btnPrintSuratJalanRent');
-    if (btnPrint) {
-        btnPrint.addEventListener('click', () => {
-            const nosj = btnPrint.dataset.sj;
-            if (!nosj) return;
-            window.open(`{{ url('rent-pendingin/print/surjal') }}/${encodeURIComponent(nosj)}`, '_blank');
-        });
-    }
-
-    document.getElementById('btnClearRentPendinginSurjal').addEventListener('click', () => {
+    document.getElementById('btnClearRentPendinginSurjal')?.addEventListener('click', () => {
         form.reset();
         document.getElementById('tanggal_rent_dingin').value = '{{ now()->format('Y-m-d') }}';
         document.getElementById('tanggal_surjal_rent_dingin').value = '{{ now()->format('Y-m-d') }}';
-        document.getElementById('total_rent_dingin').value = '0';
         document.getElementById('sub_total_rent_dingin').value = '0';
         document.getElementById('dpp_rent_dingin').value = '0';
         document.getElementById('pajak_rent_dingin').value = '0';
+        document.getElementById('total_rent_dingin').value = '0';
+        document.getElementById('total_rent_dingin').setAttribute('value', '0');
         setButtonToSaveMode();
     });
 
-    document.getElementById('btnSimpanRentPendinginSurjal').addEventListener('click', () => {
-        const mode = document.getElementById('btnSimpanRentPendinginSurjal').dataset.mode || 'save';
-        if (mode === 'update') {
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const saveBtn = document.getElementById('btnSimpanRentPendinginSurjal');
+        const originalText = saveBtn.innerHTML;
+        const nosjValue = (document.getElementById('no_surjal_rent_dingin').value || '').trim();
+        const mode = (saveBtn.dataset.mode || (nosjValue ? 'update' : 'save')).toLowerCase();
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';
+
+        try {
+            const normalizedForm = normalizeFormCurrencyFields();
+            const url = mode === 'update' && nosjValue
+                ? `{{ url('rent-pendingin/update-sj') }}/${encodeURIComponent(nosjValue)}`
+                : '{{ route('rent-pendingin.store-sj') }}';
+
+            const response = await fetch(url, {
+                method: 'POST',
+                body: normalizedForm,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const message = payload.message || (payload.errors ? Object.values(payload.errors || {}).flat().join('\n') : 'Gagal menyimpan data.');
+                throw new Error(message);
+            }
+
+            const savedNosj = payload.data?.NOSJ || document.getElementById('no_surjal_rent_dingin').value || '';
+            if (savedNosj) {
+                document.getElementById('no_surjal_rent_dingin').value = savedNosj;
+            }
+            if (payload.data?.NOMUAT) {
+                document.getElementById('no_muat_rent_dingin').value = payload.data.NOMUAT;
+            }
+
+            document.getElementById('btnPrintSuratJalanRent').dataset.sj = savedNosj;
+            document.getElementById('divPrintSuratJalanRent').classList.remove('d-none');
             setButtonToUpdateMode();
-            return;
+            saveBtn.dataset.mode = 'update';
+            alert(payload.message || 'Data berhasil disimpan.');
+        } catch (error) {
+            alert(error.message || 'Terjadi kesalahan saat menyimpan.');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
         }
-        setButtonToSaveMode();
     });
 
-    document.getElementById('btnMuatRentPendingin')?.addEventListener('click', () => {
-        const nomuat = document.getElementById('no_muat_rent_dingin').value;
-        if (!nomuat) {
-            alert('Silakan pilih No Muat terlebih dahulu.');
+    document.getElementById('btnMuatRentPendingin')?.addEventListener('click', async () => {
+        const nosj = (document.getElementById('no_surjal_rent_dingin').value || '').trim();
+        if (!nosj) {
+            alert('Silakan pilih No Surat Jalan terlebih dahulu.');
             return;
         }
-        setButtonToUpdateMode();
-    });
 
-    setButtonToSaveMode();
-    calculateTotalDgn();
+        try {
+            const response = await fetch(`{{ url('rent-pendingin/proses-muat') }}/${encodeURIComponent(nosj)}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload?.message || 'Gagal memproses No Muat.');
+            }
+
+            const nomuat = payload?.nomuat || payload?.data?.NOMUAT || '';
+            if (nomuat) {
+                document.getElementById('no_muat_rent_dingin').value = nomuat;
+            }
+
+            alert(payload?.message || 'No Muat berhasil diproses.');
+            setButtonToUpdateMode();
+        } catch (error) {
+            alert(error.message || 'Terjadi kesalahan saat memproses No Muat.');
+        }
+    });
 })();
 </script>
 @endpush

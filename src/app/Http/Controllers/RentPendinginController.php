@@ -74,7 +74,19 @@ class RentPendinginController extends Controller
         $validated['CLOSSING'] = 'N';
         $validated['catatan'] = $validated['catatan'] ?? 'RENT PENDINGIN';
 
-        Expedisi::create($validated);
+        $expedisi = Expedisi::create($validated);
+
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Surat jalan rent pendingin berhasil disimpan.',
+                'data' => [
+                    'id' => $expedisi->id,
+                    'NOSJ' => $expedisi->NOSJ,
+                    'NOMUAT' => $expedisi->NOMUAT,
+                ],
+            ]);
+        }
 
         return redirect()->route('rent-pendingin.index')
             ->with('success', 'Surat jalan rent pendingin berhasil disimpan.');
@@ -115,6 +127,18 @@ class RentPendinginController extends Controller
 
         $rentPendingin->update($validated);
 
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Surat jalan rent pendingin berhasil diupdate.',
+                'data' => [
+                    'id' => $rentPendingin->id,
+                    'NOSJ' => $rentPendingin->NOSJ,
+                    'NOMUAT' => $rentPendingin->NOMUAT,
+                ],
+            ]);
+        }
+
         return redirect()->route('rent-pendingin.index')
             ->with('success', 'Surat jalan rent pendingin berhasil diupdate.');
     }
@@ -125,6 +149,44 @@ class RentPendinginController extends Controller
 
         return redirect()->route('rent-pendingin.index')
             ->with('success', 'Surat jalan rent pendingin berhasil dihapus.');
+    }
+
+    public function resetMuat(int $id)
+    {
+        $rentPendingin = Expedisi::query()
+            ->where('id', $id)
+            ->where('JENIS', 'REN')
+            ->whereNotNull('NOMUAT')
+            ->where('NOMUAT', '!=', '')
+            ->firstOrFail();
+
+        $rentPendingin->update([
+            'NOMUAT' => null,
+            'TGLMUAT' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data berhasil dikembalikan ke Surat Jalan.',
+        ]);
+    }
+
+    public function destroySurjal(int $id)
+    {
+        $rentPendingin = Expedisi::query()
+            ->where('id', $id)
+            ->where('JENIS', 'REN')
+            ->where(function ($query) {
+                $query->whereNull('NOMUAT')->orWhere('NOMUAT', '');
+            })
+            ->firstOrFail();
+
+        $rentPendingin->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Surat Jalan berhasil dihapus.',
+        ]);
     }
 
     public function printSurjal(string $nosj)
@@ -144,6 +206,9 @@ class RentPendinginController extends Controller
 
         $rows = Expedisi::query()
             ->where('JENIS', 'REN')
+            ->where(function ($query) {
+                $query->whereNull('NOMUAT')->orWhere('NOMUAT', '');
+            })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('NOSJ', 'like', "%{$search}%")
@@ -346,5 +411,146 @@ class RentPendinginController extends Controller
             'current_page' => $items->currentPage(),
             'last_page' => $items->lastPage(),
         ]);
+    }
+
+    public function storeSj(Request $request)
+    {
+        $validated = $request->validate([
+            'TGLMUAT' => 'nullable|date',
+            'NOSJ' => 'nullable|string|max:20',
+            'NOMUAT' => 'nullable|string|max:20',
+            'CUSTOMER' => 'required|string|max:100',
+            'CUSTOMER_KODE' => 'nullable|string|max:100',
+            'P_NAMA' => 'nullable|string|max:100',
+            'P_PHONE' => 'nullable|string|max:50',
+            'P_ALAMAT' => 'nullable|string|max:255',
+            'PESANAN' => 'nullable|string|max:100',
+            'DRIVER' => 'nullable|string|max:20',
+            'NAMA_DRIVER' => 'nullable|string|max:100',
+            'KENDARAAN' => 'nullable|string|max:20',
+            'NAMA_KENDARAAN' => 'nullable|string|max:100',
+            'JUMLAH' => 'required|numeric|min:1',
+            'HARGA' => 'required|numeric|min:0',
+            'DISC' => 'nullable|numeric|min:0|max:100',
+            'PPN' => 'nullable|numeric|min:0',
+            'GRAND' => 'nullable|numeric|min:0',
+            'catatan' => 'nullable|string|max:500',
+            'tglsj' => 'nullable|date',
+        ]);
+
+        $validated['JENIS'] = 'REN';
+        $validated['NOSJ'] = $this->generateNoSuratJalan();
+        $validated['USER'] = $request->user()?->name ?? 'system';
+        $validated['USEREDIT'] = $request->user()?->name ?? 'system';
+        $validated['READY'] = 'Y';
+        $validated['CLOSSING'] = 'N';
+        $validated['UNIT'] = 'HARI';
+        $subtotal = round((float) $validated['JUMLAH'] * (float) $validated['HARGA']);
+        $validated['DISC'] = (float) ($validated['DISC'] ?? 0);
+        $validated['NDISC'] = round($subtotal * ($validated['DISC'] / 100));
+        $validated['TOTAL'] = $subtotal - min($validated['NDISC'], $subtotal);
+        $validated['PPN'] = (float) ($validated['PPN'] ?? 0);
+        $validated['GRAND'] = round($validated['TOTAL'] + ($validated['TOTAL'] * ($validated['PPN'] / 100)));
+        $validated['catatan'] = $validated['catatan'] ?? 'RENT PENDINGIN';
+
+        $expedisi = Expedisi::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rent pendingin berhasil disimpan',
+            'data' => [
+                'NOSJ' => $expedisi->NOSJ,
+                'NOMUAT' => $expedisi->NOMUAT,
+                'GRAND' => number_format((float) $expedisi->GRAND, 0, ',', '.'),
+            ],
+        ]);
+    }
+
+    public function updateSj(Request $request, string $nosj)
+    {
+        $validated = $request->validate([
+            'TGLMUAT' => 'nullable|date',
+            'NOMUAT' => 'nullable|string|max:20',
+            'CUSTOMER' => 'required|string|max:100',
+            'CUSTOMER_KODE' => 'nullable|string|max:100',
+            'P_NAMA' => 'nullable|string|max:100',
+            'P_PHONE' => 'nullable|string|max:50',
+            'P_ALAMAT' => 'nullable|string|max:255',
+            'PESANAN' => 'nullable|string|max:100',
+            'DRIVER' => 'nullable|string|max:20',
+            'NAMA_DRIVER' => 'nullable|string|max:100',
+            'KENDARAAN' => 'nullable|string|max:20',
+            'NAMA_KENDARAAN' => 'nullable|string|max:100',
+            'JUMLAH' => 'required|numeric|min:1',
+            'HARGA' => 'required|numeric|min:0',
+            'DISC' => 'nullable|numeric|min:0|max:100',
+            'PPN' => 'nullable|numeric|min:0',
+            'GRAND' => 'nullable|numeric|min:0',
+            'catatan' => 'nullable|string|max:500',
+            'tglsj' => 'nullable|date',
+        ]);
+
+        $expedisi = Expedisi::where('NOSJ', $nosj)->where('JENIS', 'REN')->firstOrFail();
+
+        $validated['USEREDIT'] = $request->user()?->name ?? 'system';
+        $validated['JENIS'] = 'REN';
+        $validated['UNIT'] = 'HARI';
+        $subtotal = round((float) $validated['JUMLAH'] * (float) $validated['HARGA']);
+        $validated['DISC'] = (float) ($validated['DISC'] ?? 0);
+        $validated['NDISC'] = round($subtotal * ($validated['DISC'] / 100));
+        $validated['TOTAL'] = $subtotal - min($validated['NDISC'], $subtotal);
+        $validated['PPN'] = (float) ($validated['PPN'] ?? 0);
+        $validated['GRAND'] = round($validated['TOTAL'] + ($validated['TOTAL'] * ($validated['PPN'] / 100)));
+        $validated['catatan'] = $validated['catatan'] ?? 'RENT PENDINGIN';
+
+        $expedisi->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data rent pendingin berhasil diperbarui',
+            'data' => [
+                'NOSJ' => $expedisi->NOSJ,
+                'NOMUAT' => $expedisi->NOMUAT,
+                'GRAND' => number_format((float) $expedisi->GRAND, 0, ',', '.'),
+            ],
+        ]);
+    }
+
+    public function prosesMuat(Request $request, string $nosj)
+    {
+        $row = Expedisi::where('NOSJ', $nosj)->where('JENIS', 'REN')->firstOrFail();
+
+        if (! empty($row->NOMUAT)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No Muat sudah ada untuk Surat Jalan ini.',
+                'nomuat' => $row->NOMUAT,
+                'data' => ['NOMUAT' => $row->NOMUAT],
+            ]);
+        }
+
+        $nomuat = $this->generateNomuat();
+        $row->update([
+            'NOMUAT' => $nomuat,
+            'TGLMUAT' => $request->input('TGLMUAT') ?: $row->TGLMUAT ?: now()->toDateString(),
+            'USEREDIT' => $request->user()?->name ?? 'system',
+            'READY' => 'Y',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'No Muat berhasil diproses.',
+            'nomuat' => $nomuat,
+            'data' => ['NOMUAT' => $nomuat],
+        ]);
+    }
+
+    private function generateNomuat(): string
+    {
+        $prefix = 'MU'.now()->format('my');
+        $last = Expedisi::query()->where('NOMUAT', 'like', $prefix.'%')->orderByDesc('NOMUAT')->value('NOMUAT');
+        $next = $last ? ((int) substr($last, -5)) + 1 : 1;
+
+        return $prefix.str_pad((string) $next, 5, '0', STR_PAD_LEFT);
     }
 }

@@ -673,6 +673,10 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
         ->name('rent-pendingin.data.surjal');
     Route::get('rent-pendingin/data/muat', [RentPendinginController::class, 'dataMuat'])
         ->name('rent-pendingin.data.muat');
+    Route::post('rent-pendingin/muat/{id}/reset', [RentPendinginController::class, 'resetMuat'])
+        ->name('rent-pendingin.muat.reset');
+    Route::delete('rent-pendingin/surjal/{id}', [RentPendinginController::class, 'destroySurjal'])
+        ->name('rent-pendingin.surjal.destroy');
     Route::get('rent-pendingin/show/surjal/{nosj}', [RentPendinginController::class, 'showSurjal'])
         ->name('rent-pendingin.show.surjal');
     Route::get('rent-pendingin/show/muat/{nomuat}', [RentPendinginController::class, 'showMuat'])
@@ -681,6 +685,12 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
         ->name('rent-pendingin.print.surjal');
     Route::get('rent-pendingin/price-items/{kodecus}', [RentPendinginController::class, 'priceItems'])
         ->name('rent-pendingin.price-items');
+    Route::post('rent-pendingin/store-sj', [RentPendinginController::class, 'storeSj'])
+        ->name('rent-pendingin.store-sj');
+    Route::post('rent-pendingin/update-sj/{nosj}', [RentPendinginController::class, 'updateSj'])
+        ->name('rent-pendingin.update-sj');
+    Route::post('rent-pendingin/proses-muat/{nosj}', [RentPendinginController::class, 'prosesMuat'])
+        ->name('rent-pendingin.proses-muat');
 
     /*
     | Rent Pendingin Generate Invoice
