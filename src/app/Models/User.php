@@ -65,6 +65,11 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
 
+    public function isAdmin(): bool
+    {
+        return (bool) ($this->is_admin || $this->role?->name === 'Administrator');
+    }
+
     public function hasMenuPermission(string $routeName, string $permission = 'view'): bool
     {
         $menu = Menu::resolveByRoute($routeName);

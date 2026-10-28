@@ -669,8 +669,18 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |   sidebar_Invoice_edit_rent → rent-pendingin-edit.index (use generate-invoice edit)
     */
     Route::resource('rent-pendingin', RentPendinginController::class);
-    Route::get('rent-pendingin/print/surjal', [RentPendinginController::class, 'printSurjal'])
+    Route::get('rent-pendingin/data/surjal', [RentPendinginController::class, 'dataSurjal'])
+        ->name('rent-pendingin.data.surjal');
+    Route::get('rent-pendingin/data/muat', [RentPendinginController::class, 'dataMuat'])
+        ->name('rent-pendingin.data.muat');
+    Route::get('rent-pendingin/show/surjal/{nosj}', [RentPendinginController::class, 'showSurjal'])
+        ->name('rent-pendingin.show.surjal');
+    Route::get('rent-pendingin/show/muat/{nomuat}', [RentPendinginController::class, 'showMuat'])
+        ->name('rent-pendingin.show.muat');
+    Route::get('rent-pendingin/print/surjal/{nosj}', [RentPendinginController::class, 'printSurjal'])
         ->name('rent-pendingin.print.surjal');
+    Route::get('rent-pendingin/price-items/{kodecus}', [RentPendinginController::class, 'priceItems'])
+        ->name('rent-pendingin.price-items');
 
     /*
     | Rent Pendingin Generate Invoice

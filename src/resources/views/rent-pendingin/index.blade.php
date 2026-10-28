@@ -1,20 +1,20 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row mb-3">
+<div class="container-fluid" data-debug="transaksiRentPendinginIndex">
+    <div class="row mb-3" data-debug="transaksiRentPendinginHeader">
         <div class="col">
-            <h1 class="page-title mb-1">Rent Pendingin</h1>
-            <p class="text-muted small mb-0">Daftar sewa mobil pendingin</p>
+            <h1 class="page-title mb-1" data-debug="transaksiRentPendinginTitle">Rent Pendingin</h1>
+            <p class="text-muted small mb-0" data-debug="transaksiRentPendinginSubtitle">Daftar sewa mobil pendingin</p>
         </div>
         <div class="col-auto">
-            <a href="{{ route('rent-pendingin.create') }}" class="btn btn-primary btn-sm">
+            <a href="{{ route('rent-pendingin.create') }}" id="btnTambahRentPendingin" data-debug="transaksiRentPendinginCreateBtn" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg"></i> Tambah SJ
             </a>
         </div>
     </div>
 
-    <form method="GET" class="mb-3">
+    <form method="GET" id="formFilterRentPendingin" data-debug="transaksiRentPendinginFilter" class="mb-3">
         <div class="input-group input-group-sm">
             <input type="text" name="search" class="form-control"
                    placeholder="Cari NOSJ / Customer..." value="{{ request('search') }}">
@@ -40,7 +40,7 @@
                 </thead>
                 <tbody>
                     @forelse($rents as $r)
-                    <tr>
+                    <tr data-debug="transaksiRentPendinginRow_{{ $r->NOSJ ?? $loop->index }}">
                         <td>{{ $rents->firstItem() + $loop->index }}</td>
                         <td class="font-monospace">{{ $r->NOSJ }}</td>
                         <td>{{ $r->TGLMUAT?->format('d/m/Y') }}</td>
@@ -49,19 +49,21 @@
                         <td class="text-end">{{ number_format((float) $r->GRAND, 0, ',', '.') }}</td>
                         <td class="font-monospace">{{ $r->INVOICE ?? '-' }}</td>
                         <td class="text-end">
-                            <a href="{{ route('rent-pendingin.print.surjal', [], $r->NOSJ) }}" class="btn btn-sm btn-outline-primary" title="Print SJ">
+                            <a href="{{ route('rent-pendingin.print.surjal', ['nosj' => $r->NOSJ]) }}" id="btnPrintRentPendingin-{{ $r->NOSJ }}" data-debug="transaksiRentPendinginPrint" class="btn btn-sm btn-outline-primary" title="Print SJ">
                                 <i class="bi bi-printer"></i>
                             </a>
-                            <a href="#" class="btn btn-sm btn-outline-warning" title="Edit">
+                            <a href="{{ route('rent-pendingin.edit', $r) }}" id="btnEditRentPendingin-{{ $r->NOSJ }}" data-debug="transaksiRentPendinginEdit" class="btn btn-sm btn-outline-warning" title="Edit">
                                 <i class="bi bi-pencil"></i>
                             </a>
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="9" class="text-center py-4 text-muted">
-                        <i class="bi bi-inbox display-4"></i>
-                        <p class="mt-2">Tidak ada data rent pendingin.</p>
-                    </td></tr>
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox display-4"></i>
+                            <p class="mt-2">Tidak ada data rent pendingin.</p>
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
