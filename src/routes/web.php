@@ -697,11 +697,28 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |   sidebar_generate_rent_dingin → rent-pendingin-generate-invoice.index
     |   sidebar_Invoice_edit_rent → rent-pendingin-invoice-gen.edit
     */
-    Route::resource('rent-pendingin-invoice', RentPendinginGenerateInvoiceController::class);
+    Route::get('rent-pendingin-invoice', [RentPendinginGenerateInvoiceController::class, 'index'])
+        ->name('rent-pendingin-invoice.index');
+    Route::get('rent-pendingin-invoice/export', [RentPendinginGenerateInvoiceController::class, 'export'])
+        ->name('rent-pendingin-invoice.export');
+    Route::get('rent-pendingin-invoice/data', [RentPendinginGenerateInvoiceController::class, 'getDataInvoiceGen'])
+        ->name('rent-pendingin-invoice.data');
+    Route::get('rent-pendingin-invoice/surat-jalan/{nosj}', [RentPendinginGenerateInvoiceController::class, 'showInvoiceDetail'])
+        ->name('rent-pendingin-invoice.surat-jalan');
+    Route::post('rent-pendingin-invoice', [RentPendinginGenerateInvoiceController::class, 'prosesInvoicePembayaran'])
+        ->name('rent-pendingin-invoice.store');
+    Route::get('rent-pendingin-invoice/{noInvoice}/pdf', [RentPendinginGenerateInvoiceController::class, 'pdfInvoiceGenerate'])
+        ->name('rent-pendingin-invoice.pdf');
+    Route::get('rent-pendingin-invoice/{noInvoice}/text', [RentPendinginGenerateInvoiceController::class, 'printInvoiceText'])
+        ->name('rent-pendingin-invoice.text');
+    Route::get('rent-pendingin-invoice/{noInvoice}', [RentPendinginGenerateInvoiceController::class, 'show'])
+        ->name('rent-pendingin-invoice.show');
     Route::get('rent-pendingin-invoice-gen', [RentPendinginGenerateInvoiceController::class, 'indexEdit'])
         ->name('rent-pendingin-invoice-gen.index');
     Route::get('rent-pendingin-invoice-gen/{noInvoice}/edit', [RentPendinginGenerateInvoiceController::class, 'showEditInvoiceRen'])
         ->name('rent-pendingin-invoice-gen.edit');
+    Route::put('rent-pendingin-invoice-gen/{noInvoice}', [RentPendinginGenerateInvoiceController::class, 'updateEditInvoiceRen'])
+        ->name('rent-pendingin-invoice-gen.update');
 
     /*
     | Rent Pendingin Kwitansi
