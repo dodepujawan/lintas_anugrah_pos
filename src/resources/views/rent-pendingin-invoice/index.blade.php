@@ -12,7 +12,7 @@
         </div>
         <div class="d-flex flex-wrap gap-2">
             @if($canExport)
-                <button type="button" class="btn btn-outline-success" data-bs-toggle="collapse" data-bs-target="#rentInvoiceExportPanel" aria-expanded="false" aria-controls="rentInvoiceExportPanel">
+                <button type="button" class="btn btn-outline-success" id="rentInvoiceExportToggle" aria-expanded="false" aria-controls="rentInvoiceExportPanel">
                     <i class="bi bi-file-earmark-spreadsheet me-1"></i>Export Excel
                 </button>
             @endif
@@ -26,7 +26,7 @@
     </div>
 
     @if($canExport)
-    <div class="collapse mb-4" id="rentInvoiceExportPanel">
+    <div class="d-none mb-4" id="rentInvoiceExportPanel">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-3"><h2 class="h6 mb-0">Export Laporan Invoice Rent Pendingin</h2></div>
             <form method="GET" action="{{ route('rent-pendingin-invoice.export') }}" class="card-body row g-3 align-items-end">
@@ -207,6 +207,16 @@
 @push('scripts')
 <script>
 (() => {
+    const exportToggle = document.getElementById('rentInvoiceExportToggle');
+    const exportPanel = document.getElementById('rentInvoiceExportPanel');
+    if (exportToggle && exportPanel) {
+        exportToggle.onclick = () => {
+            const expanded = exportToggle.getAttribute('aria-expanded') === 'true';
+            exportToggle.setAttribute('aria-expanded', String(!expanded));
+            exportPanel.classList.toggle('d-none', expanded);
+        };
+    }
+
     const tbody = document.querySelector('#rentInvoiceTable tbody');
     const formCard = document.getElementById('rentInvoiceFormCard');
     const form = document.getElementById('rentInvoiceForm');
