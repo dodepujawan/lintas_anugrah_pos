@@ -724,7 +724,16 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     | Rent Pendingin Kwitansi
     |   sidebar_generate_kwt_dingin → rent-pendingin-kwitansi.index
     */
-    Route::resource('rent-pendingin-kwitansi', RentPendinginKwitansiController::class);
+    Route::get('rent-pendingin-kwitansi', [RentPendinginKwitansiController::class, 'index'])
+        ->name('rent-pendingin-kwitansi.index');
+    Route::post('rent-pendingin-kwitansi', [RentPendinginKwitansiController::class, 'prosesKwitansi'])
+        ->name('rent-pendingin-kwitansi.store');
+    Route::post('rent-pendingin-kwitansi/destroy', [RentPendinginKwitansiController::class, 'deleteKwitansi'])
+        ->name('rent-pendingin-kwitansi.destroy');
+    Route::get('rent-pendingin-kwitansi/kwitansi/{noKwt}/text', [RentPendinginKwitansiController::class, 'printKwitansiText'])
+        ->name('rent-pendingin-kwitansi.text');
+    Route::get('rent-pendingin-kwitansi/kwitansi/{noKwt}/pdf', [RentPendinginKwitansiController::class, 'printKwitansi'])
+        ->name('rent-pendingin-kwitansi.pdf');
 
     /*
     | Coolroom

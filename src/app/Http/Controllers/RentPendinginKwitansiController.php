@@ -101,7 +101,7 @@ class RentPendinginKwitansiController extends Controller
                     throw new RuntimeException('Invoice sudah memiliki kwitansi');
                 }
 
-                $master = $rows->firstWhere(fn ($row) => (float) ($row->GRAND ?? 0) > 0) ?? $rows->first();
+                $master = $rows->first(fn ($row) => (float) ($row->GRAND ?? 0) > 0) ?? $rows->first();
                 if (! $master) {
                     throw new RuntimeException('Master invoice tidak ditemukan');
                 }
@@ -143,7 +143,7 @@ class RentPendinginKwitansiController extends Controller
                 ->withErrors(['invoice' => $e->getMessage()]);
         }
 
-        return redirect()->route('rent-pendingin-kwitansi.index')
+        return redirect()->route('rent-pendingin-kwitansi.index', ['status_kwt' => 'sudah'])
             ->with('success', 'Kwitansi '.$noKwt.' berhasil diproses.')
             ->with('autoPrintKwitansi', $noKwt);
     }
@@ -180,7 +180,7 @@ class RentPendinginKwitansiController extends Controller
                 ->withErrors(['kwt' => $e->getMessage()]);
         }
 
-        return redirect()->route('rent-pendingin-kwitansi.index')
+        return redirect()->route('rent-pendingin-kwitansi.index', ['status_kwt' => 'belum'])
             ->with('success', 'Kwitansi '.$noKwt.' berhasil dibatalkan.');
     }
 

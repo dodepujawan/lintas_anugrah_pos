@@ -23,7 +23,7 @@ return new class extends Migration
             // ======================
             // CUSTOMER & SJ
             // ======================
-            $table->char('CUSTOMER', 30)->nullable();
+            $table->char('CUSTOMER', 100)->nullable();
             $table->char('NOSJ', 30)->nullable();
             // ======================
             // KETERANGAN

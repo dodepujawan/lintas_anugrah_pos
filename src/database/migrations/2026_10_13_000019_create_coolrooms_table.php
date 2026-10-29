@@ -13,7 +13,7 @@ return new class extends Migration
             $table->date('TGLMUAT')->nullable();
             $table->char('NOSJ', 20)->nullable();
             $table->char('NOMUAT', 20)->nullable();
-            $table->char('CUSTOMER', 30)->nullable();
+            $table->char('CUSTOMER', 100)->nullable();
             $table->string('NAMACUST', 100)->nullable();
             $table->char('KENDARAAN', 20)->nullable();
             $table->char('NAMA_KENDARAAN', 50)->nullable();
