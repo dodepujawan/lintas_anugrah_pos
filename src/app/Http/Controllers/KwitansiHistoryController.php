@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Kwitansi;
 use App\Models\Arh;
+use App\Models\Kwitansi;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -18,46 +18,49 @@ class KwitansiHistoryController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $jenis = $this->normalizeJenis($request->input('jenis'));
 
         $kwitantis = Kwitansi::query()
             ->when($search, function ($query) use ($search) {
-                $query->where('NO_KWT', 'like', "%{$search}%")
-                    ->orWhere('NOFAKTUR', 'like', "%{$search}%")
+                $query->where('NOKWT', 'like', "%{$search}%")
+                    ->orWhere('FDOK_TRANS', 'like', "%{$search}%")
                     ->orWhere('CUSTOMER', 'like', "%{$search}%");
             })
-            ->when($request->input('jenis'), function ($query) use ($request) {
-                $query->where('JENIS_KWT', $request->input('jenis'));
+            ->when($jenis, function ($query) use ($jenis) {
+                $query->where('JENIS', $jenis);
             })
             ->when($request->input('date_from'), function ($query) use ($request) {
-                $query->whereDate('TGL_KWT', '>=', $request->input('date_from'));
+                $query->whereDate('TGL', '>=', $request->input('date_from'));
             })
             ->when($request->input('date_to'), function ($query) use ($request) {
-                $query->whereDate('TGL_KWT', '<=', $request->input('date_to'));
+                $query->whereDate('TGL', '<=', $request->input('date_to'));
             })
-            ->orderByDesc('TGL_KWT')
+            ->orderByDesc('TGL')
             ->paginate(20)
             ->withQueryString();
 
-        $totalBayar = (float) Kwitansi::when($request->input('jenis'), function ($query) use ($request) {
-            $query->where('JENIS_KWT', $request->input('jenis'));
-        })->sum('NILAI_BAYAR');
+        $totalBayar = (float) Kwitansi::when($jenis, function ($query) use ($jenis) {
+            $query->where('JENIS', $jenis);
+        })->sum('FNIL_DOK');
 
         return view('kwitansi-history.index', compact('kwitantis', 'search', 'totalBayar'));
     }
 
     public function exportKwitansi(Request $request)
     {
+        $jenis = $this->normalizeJenis($request->input('jenis'));
+
         $kwitantis = Kwitansi::query()
-            ->when($request->input('jenis'), function ($query) use ($request) {
-                $query->where('JENIS_KWT', $request->input('jenis'));
+            ->when($jenis, function ($query) use ($jenis) {
+                $query->where('JENIS', $jenis);
             })
             ->when($request->input('date_from'), function ($query) use ($request) {
-                $query->whereDate('TGL_KWT', '>=', $request->input('date_from'));
+                $query->whereDate('TGL', '>=', $request->input('date_from'));
             })
             ->when($request->input('date_to'), function ($query) use ($request) {
-                $query->whereDate('TGL_KWT', '<=', $request->input('date_to'));
+                $query->whereDate('TGL', '<=', $request->input('date_to'));
             })
-            ->orderBy('TGL_KWT')
+            ->orderBy('TGL')
             ->get();
 
         return Excel::download(new \App\Exports\KwitansiExport($kwitantis), 'kwitansi-history.xlsx');
@@ -78,5 +81,19 @@ class KwitansiHistoryController extends Controller
             ->get(['NOFAKTUR', 'CUSTOMER', 'SALDO', 'BAYAR']);
 
         return response()->json($invoices);
+    }
+
+    protected function normalizeJenis(?string $jenis): ?string
+    {
+        if ($jenis === null || $jenis === '') {
+            return null;
+        }
+
+        return match ($jenis) {
+            'Expedisi' => 'EKS',
+            'Rent' => 'REN',
+            'Coolroom' => 'COO',
+            default => strtoupper((string) $jenis),
+        };
     }
 }

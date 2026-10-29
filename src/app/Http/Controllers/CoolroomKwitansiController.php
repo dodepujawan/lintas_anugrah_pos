@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Kwitansi;
 use App\Models\Arh;
 use App\Models\Barh;
-use App\Services\JournalService;
+use App\Models\Kwitansi;
 use App\Services\AccountMap;
+use App\Services\JournalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -22,12 +22,12 @@ class CoolroomKwitansiController extends Controller
     {
         $search = trim((string) $request->input('search'));
         $kwitantis = Kwitansi::query()
-            ->where('JENIS_KWT', 'Coolroom')
+            ->where('JENIS', 'COO')
             ->when($search, function ($query) use ($search) {
-                $query->where('NO_KWT', 'like', "%{$search}%")
-                    ->orWhere('NOFAKTUR', 'like', "%{$search}%");
+                $query->where('NOKWT', 'like', "%{$search}%")
+                    ->orWhere('FDOK_TRANS', 'like', "%{$search}%");
             })
-            ->orderByDesc('TGL_KWT')
+            ->orderByDesc('TGL')
             ->paginate(20)
             ->withQueryString();
 
@@ -47,26 +47,28 @@ class CoolroomKwitansiController extends Controller
         ]);
 
         $arh = Arh::where('NOFAKTUR', $validated['NOFAKTUR'])->firstOrFail();
-        $sisa = (float) $arh->SALDO - $arh->BAYAR;
+        $sisa = (float) $arh->SALDO - (float) $arh->BAYAR;
         $bayar = min((float) $validated['NILAI_BAYAR'], $sisa);
 
         DB::transaction(function () use ($arh, $validated, $bayar) {
             $noKwt = 'KWT-' . now()->format('Ymd') . '-' . rand(1000, 9999);
 
             $kwitansi = Kwitansi::create([
-                'NO_KWT' => $noKwt,
-                'TGL_KWT' => $validated['TGL_KWT'],
-                'NOFAKTUR' => $validated['NOFAKTUR'],
-                'SALDO_FAKTUR' => $arh->SALDO,
-                'NILAI_BAYAR' => $bayar,
-                'DISCOUNT' => $validated['DISCOUNT'] ?? 0,
-                'RETUR' => $validated['RETUR'] ?? 0,
-                'JENIS_KWT' => 'Coolroom',
+                'NOKWT' => $noKwt,
+                'TGL' => $validated['TGL_KWT'],
+                'FDOK_TRANS' => $validated['NOFAKTUR'],
+                'TGL_TRANS' => $arh->TGLFAKTUR,
                 'CUSTOMER' => $arh->CUSTOMER,
-                'NAMACUST' => $arh->KETERANGAN,
-                'NOBAYAR' => $arh->NOFAKTUR . '-' . $noKwt,
-                'KETERANGAN' => $validated['KETERANGAN'],
-                'USEREDIT' => $validated['METODE_PEMBAYARAN'] ?? null,
+                'NOSJ' => $arh->NOFAKTUR,
+                'FKETERANG' => $validated['KETERANGAN'] ?? 'Pembayaran Coolroom',
+                'FNAMA' => $arh->CUSTOMER,
+                'FNIL_DOK' => (float) $arh->SALDO,
+                'TOTAL' => (float) $arh->PIUTANG,
+                'PPN' => 0,
+                'DISC' => (float) ($validated['DISCOUNT'] ?? 0),
+                'NDISC' => (float) ($validated['RETUR'] ?? 0),
+                'USERINPUT' => auth()->user()->name ?? 'system',
+                'JENIS' => 'COO',
             ]);
 
             $arh->increment('BAYAR', $bayar);
@@ -82,10 +84,10 @@ class CoolroomKwitansiController extends Controller
     public function deleteKwitansi(Kwitansi $kwitansi)
     {
         DB::transaction(function () use ($kwitansi) {
-            $arh = Arh::where('NOFAKTUR', $kwitansi->NOFAKTUR)->first();
+            $arh = Arh::where('NOFAKTUR', $kwitansi->FDOK_TRANS)->first();
 
             if ($arh) {
-                $arh->decrement('BAYAR', $kwitansi->NILAI_BAYAR);
+                $arh->decrement('BAYAR', $kwitansi->FNIL_DOK);
             }
 
             $kwitansi->delete();
@@ -99,7 +101,7 @@ class CoolroomKwitansiController extends Controller
     {
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('coolroom-kwitansi.pdf.index', compact('kwitansi'));
 
-        return $pdf->stream('kwitansi-' . $kwitansi->NO_KWT . '.pdf', ['stream' => true]);
+        return $pdf->stream('kwitansi-' . $kwitansi->NOKWT . '.pdf', ['stream' => true]);
     }
 
     protected function createPaymentJournal(Arh $arh, Kwitansi $kwitansi, float $amount): void
@@ -109,12 +111,12 @@ class CoolroomKwitansiController extends Controller
         }
 
         $journalService = app(JournalService::class);
-        $noJurnal = $journalService->generateJournalNumber('JURNAL', $kwitansi->TGL_KWT);
+        $noJurnal = $journalService->generateJournalNumber('JURNAL', $kwitansi->TGL);
 
         $journal = $journalService->createJournal(
             $noJurnal,
-            $kwitansi->TGL_KWT->toDateString(),
-            "Pembayaran Coolroom {$kwitansi->NO_KWT}",
+            $kwitansi->TGL->toDateString(),
+            "Pembayaran Coolroom {$kwitansi->NOKWT}",
             [
                 ['coa_id' => AccountMap::id('cash') ?? 1, 'debit' => $amount, 'kredit' => 0, 'deskripsi' => 'Pembayaran Kas'],
                 ['coa_id' => AccountMap::id('ar_usaha') ?? 11, 'debit' => 0, 'kredit' => $amount, 'deskripsi' => 'Penyelesaian Piutang'],
