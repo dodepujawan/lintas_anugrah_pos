@@ -744,7 +744,7 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |   sidebar_coolroom → coolroom.index
     |   sidebar_coolroom_inv → coolroom-invoice.index
     |   sidebar_coolroom_kwt → coolroom-kwitansi.index
-    |   sidebar_coolroom_edit → coolroom-invoice-gen.edit
+    |   sidebar_coolroom_edit → coolroom-invoice-gen.index
     */
     Route::resource('coolroom', CoolroomController::class);
     Route::get('coolroom/{nosj}/pdf', [CoolroomController::class, 'pdf'])
@@ -752,9 +752,22 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     Route::post('coolroom/customer/search', [CoolroomController::class, 'getDataCustomer'])
         ->name('coolroom.customer.search');
 
-    Route::resource('coolroom-invoice', CoolroomGenerateInvoiceController::class);
+    Route::resource('coolroom-invoice', CoolroomGenerateInvoiceController::class)
+        ->only(['index', 'create', 'store', 'show']);
+    Route::get('coolroom-invoice/surat-jalan/{nosj}', [CoolroomGenerateInvoiceController::class, 'showInvoiceDetail'])
+        ->name('coolroom-invoice.detail');
+    Route::get('coolroom-invoice/{noInvoice}/pdf', [CoolroomGenerateInvoiceController::class, 'printInvoiceCoolroom'])
+        ->name('coolroom-invoice.pdf');
+    Route::get('coolroom-invoice/{noInvoice}/print-text', [CoolroomGenerateInvoiceController::class, 'printInvoiceText'])
+        ->name('coolroom-invoice.text');
+    Route::post('coolroom-invoice/export', [CoolroomGenerateInvoiceController::class, 'export'])
+        ->name('coolroom-invoice.export');
+    Route::get('coolroom-invoice-gen', [CoolroomGenerateInvoiceController::class, 'indexEdit'])
+        ->name('coolroom-invoice-gen.index');
     Route::get('coolroom-invoice-gen/{noInvoice}/edit', [CoolroomGenerateInvoiceController::class, 'showEditInvoiceCoolroom'])
         ->name('coolroom-invoice-gen.edit');
+    Route::put('coolroom-invoice-gen/{noInvoice}', [CoolroomGenerateInvoiceController::class, 'updateEditInvoiceCoolroom'])
+        ->name('coolroom-invoice-gen.update');
 
     Route::resource('coolroom-kwitansi', CoolroomKwitansiController::class);
 
