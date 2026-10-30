@@ -8,10 +8,12 @@ use App\Models\Expedisi;
 use App\Models\Kwitansi;
 use App\Models\Menu;
 use App\Models\Mcustomer;
+use App\Models\Pricedingincus;
 use App\Models\Rekening;
 use App\Models\Signature;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Throwable;
 
@@ -256,7 +258,8 @@ class RentPendinginGenerateInvoiceController extends Controller
     public function indexEdit(Request $request)
     {
         $search = trim((string) $request->input('search'));
-        $invoices = $this->rentInvoiceCandidateQuery()
+        $invoices = Expedisi::query()
+            ->where('JENIS', 'REN')
             ->whereNotNull('INVOICE')->where('INVOICE', '!=', '')
             ->where('GRAND', '>', 0)
             ->when($request->filled('tanggal_dari'), fn ($q) => $q->whereDate('TGLINVOICE', '>=', $request->input('tanggal_dari')))
@@ -268,6 +271,94 @@ class RentPendinginGenerateInvoiceController extends Controller
             ->paginate(20)->withQueryString();
 
         return view('rent-pendingin-invoice.edit', compact('invoices', 'search'));
+    }
+
+    public function showEditInvoiceJson(string $noInvoice)
+    {
+        $invoice = Expedisi::where('INVOICE', $noInvoice)
+            ->where('JENIS', 'REN')
+            ->where('GRAND', '>', 0)
+            ->first();
+        if (! $invoice) {
+            return response()->json(['status' => false, 'message' => 'Invoice tidak ditemukan.'], 404);
+        }
+
+        $arh = Arh::where('NOFAKTUR', $noInvoice)->first();
+        if ((float) ($arh->BAYAR ?? 0) > 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invoice sudah memiliki pembayaran. Silakan hubungi admin.',
+            ], 422);
+        }
+
+        $jumlah = (float) ($invoice->JUMLAH ?? 0);
+        $harga = (float) ($invoice->HARGA ?? 0);
+        $grand = (float) ($invoice->GRAND ?? 0);
+        $bayar = (float) ($invoice->BAYAR ?? 0);
+
+        return response()->json([
+            'status' => true,
+            'master' => [
+                'invoice' => trim((string) $invoice->INVOICE),
+                'customer_kode' => trim((string) $invoice->CUSTOMER_KODE),
+                'customer' => trim((string) $invoice->CUSTOMER),
+                'kendaraan' => trim((string) $invoice->NAMA_KENDARAAN),
+                'driver' => trim((string) $invoice->DRIVER),
+                'nomuat' => trim((string) $invoice->NOMUAT),
+                'nosj' => trim((string) $invoice->NOSJ),
+                'tgl_invoice' => $invoice->TGLINVOICE?->format('Y-m-d'),
+                'tgl_jt' => ($arh?->TGLJT ?? $invoice->TGLJT)?->format('Y-m-d'),
+                'item' => trim((string) $invoice->PESANAN),
+                'jumlah' => $jumlah,
+                'unit' => trim((string) $invoice->UNIT),
+                'harga' => $harga,
+                'subtotal' => round($jumlah * $harga),
+                'disc' => (float) ($invoice->DISC ?? 0),
+                'discount_value' => (float) ($invoice->NDISC ?? 0),
+                'total' => (float) ($invoice->TOTAL ?? 0),
+                'del_charge' => (float) ($invoice->DC ?? 0),
+                'ppn' => (float) ($invoice->PPN ?? 0),
+                'grand' => $grand,
+                'bayar' => $bayar,
+                // The legacy edit modal derives receivable from GRAND minus BAYAR.
+                'piutang' => $grand - $bayar,
+                'keterangan' => trim((string) $invoice->KETERANGAN),
+            ],
+        ]);
+    }
+
+    public function customerRentPrices(string $kodecus, Request $request)
+    {
+        $customer = Mcustomer::where('CUSTOMER', $kodecus)->first();
+        if (! $customer) {
+            return response()->json(['message' => 'Customer tidak ditemukan.'], 404);
+        }
+
+        $search = trim((string) $request->input('q'));
+        $prices = Pricedingincus::query()
+            ->leftJoin('kendaraans as k', 'pricedingincus.KODE', '=', 'k.KODE')
+            ->where('pricedingincus.KODECUS', $kodecus)
+            ->when($search !== '', fn ($query) => $query->where(function ($match) use ($search) {
+                $match->where('pricedingincus.ITEM', 'like', "%{$search}%")
+                    ->orWhere('pricedingincus.PERIODE', 'like', "%{$search}%")
+                    ->orWhere('pricedingincus.PLAT', 'like', "%{$search}%")
+                    ->orWhere('pricedingincus.JENIS', 'like', "%{$search}%")
+                    ->orWhere('k.NAMA', 'like', "%{$search}%");
+            }))
+            ->orderBy('pricedingincus.PERIODE')
+            ->orderBy('pricedingincus.id')
+            ->limit(200)
+            ->get([
+                'pricedingincus.KODEDGN', 'pricedingincus.KODE', 'pricedingincus.ITEM',
+                'pricedingincus.PERIODE', 'pricedingincus.PLAT', 'pricedingincus.JENIS',
+                'pricedingincus.HARGA', 'k.NAMA as nama_kendaraan',
+            ]);
+
+        return response()->json([
+            'customer_kode' => trim((string) $customer->CUSTOMER),
+            'customer_nama' => trim((string) $customer->NAMACUST),
+            'data' => $prices,
+        ]);
     }
 
     public function showEditInvoiceRen(string $noInvoice)
@@ -374,8 +465,38 @@ class RentPendinginGenerateInvoiceController extends Controller
                     ]);
                 }
             });
-        } catch (Throwable $exception) {
+        } catch (\RuntimeException $exception) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $exception->getMessage(),
+                ], 422);
+            }
+
             return back()->withInput()->with('error', $exception->getMessage());
+        } catch (Throwable $exception) {
+            Log::error('Gagal memperbarui invoice Rent Pendingin.', [
+                'invoice' => $noInvoice,
+                'exception' => $exception,
+            ]);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invoice gagal diperbarui. Periksa data lalu coba kembali.',
+                ], 500);
+            }
+
+            return back()->withInput()->with('error', 'Invoice gagal diperbarui. Periksa data lalu coba kembali.');
+        }
+
+        if ($request->expectsJson()) {
+            session()->flash('success', 'Invoice Rent Pendingin berhasil diperbarui.');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Invoice Rent Pendingin berhasil diperbarui.',
+                'redirect_url' => route('rent-pendingin-invoice.show', $noInvoice),
+            ]);
         }
 
         return redirect()->route('rent-pendingin-invoice-gen.edit', $noInvoice)

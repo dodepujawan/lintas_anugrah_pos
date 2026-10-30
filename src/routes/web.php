@@ -695,7 +695,7 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     /*
     | Rent Pendingin Generate Invoice
     |   sidebar_generate_rent_dingin → rent-pendingin-generate-invoice.index
-    |   sidebar_Invoice_edit_rent → rent-pendingin-invoice-gen.edit
+    |   sidebar_Invoice_edit_rent → rent-pendingin-invoice-gen.index
     */
     Route::get('rent-pendingin-invoice', [RentPendinginGenerateInvoiceController::class, 'index'])
         ->name('rent-pendingin-invoice.index');
@@ -715,6 +715,10 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
         ->name('rent-pendingin-invoice.show');
     Route::get('rent-pendingin-invoice-gen', [RentPendinginGenerateInvoiceController::class, 'indexEdit'])
         ->name('rent-pendingin-invoice-gen.index');
+    Route::get('rent-pendingin-invoice-gen/{noInvoice}/show', [RentPendinginGenerateInvoiceController::class, 'showEditInvoiceJson'])
+        ->name('rent-pendingin-invoice-gen.show');
+    Route::get('rent-pendingin-invoice-gen/prices/{kodecus}', [RentPendinginGenerateInvoiceController::class, 'customerRentPrices'])
+        ->name('rent-pendingin-invoice-gen.prices');
     Route::get('rent-pendingin-invoice-gen/{noInvoice}/edit', [RentPendinginGenerateInvoiceController::class, 'showEditInvoiceRen'])
         ->name('rent-pendingin-invoice-gen.edit');
     Route::put('rent-pendingin-invoice-gen/{noInvoice}', [RentPendinginGenerateInvoiceController::class, 'updateEditInvoiceRen'])

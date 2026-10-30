@@ -58,7 +58,7 @@ Baca dulu SEBELUM mulai:
 - Ini menggantikan toggle DataTables lama dengan halaman MVC + Alpine; master tetap membuat copy awal ke `pricedingincus` seperti source lama.
 
 ## ⚠️ WARNING: Step-by-step, satu modul per satu modul
-CONTOH: ada 3 modul Ekspedisi, Rent Pendingin, Coolroom → kerjakan Eksedisi dulu sampai DONE, setelah itu programmer cek di browser, baru lanjut ke Rent Pendingin, lalu Coolroom. Jangan lompat ke semua modul sekaligus.
+CONTOH: ada 3 modul Ekspedisi, Rent Pendingin, Coolroom → kerjakan Ekspedisi dulu sampai DONE, setelah itu programmer cek di browser, baru lanjut ke Rent Pendingin, lalu Coolroom. Jangan lompat ke semua modul sekaligus.
 
 Catat progress ke `docs/progress_migrasi.md` setiap kali selesai satu langkah.
 
@@ -84,13 +84,6 @@ Format: `transaksi[Modul][Halaman]_[Element]`
 - Untuk kolom timestamp old FoxPro data: `SET SESSION sql_mode = ''` sebelum ALTER TABLE untuk avoid '0000-00-00' datetime validation error.
 - Migration baru HARUS punya `down()` method yang valid (atau kosong dengan comment).
 - Koreksi `kendaraans.JENIS`: jangan edit migration lama `2026_10_13_000010` yang mungkin sudah recorded; migration baru `2026_10_21_000001_fix_kendaraans_jenis_length.php` mengubah schema existing maupun fresh-install menjadi `CHAR(50)` secara aman/idempotent. Jangan mengubah `JENIS` pada `prices`/`pricecus` karena kolom tersebut adalah kode harga 1 karakter.
-
-## Schema mismatch pattern (sering terjadi!)
-Schema lama (FoxPro, Uppercase) vs schema baru (Laravel, migrasi ke FROM/TO) punya perbedaan kolom:
-- Old: `DARI(decimal), SAMPAI(decimal), KODE, KETERANGAN, RUTE, HV, HKG, HBOK, KUNCI, HG, JENIS`
-- New: `FROM(string), TO(string)`
-
-**Solusi:** Tambahkan SEMUA kolom lama ke schema baru, jangan ganti nama. Controller auto-map DARI→FROM, SAMPAI→TO jika FROM/TO kosong.
 
 ## Controller best practices
 - Tambahkan `$fillable` lengkap di model (semua kolom lama + baru)

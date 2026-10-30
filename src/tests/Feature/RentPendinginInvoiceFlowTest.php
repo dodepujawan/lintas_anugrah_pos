@@ -4,7 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Arh;
 use App\Models\Expedisi;
+use App\Models\Kendaraan;
+use App\Models\Kwitansi;
 use App\Models\Menu;
+use App\Models\Mcustomer;
+use App\Models\Pricedingincus;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -128,9 +132,118 @@ class RentPendinginInvoiceFlowTest extends TestCase
         $this->assertDatabaseHas('arh', ['NOFAKTUR' => 'FJO2026000001', 'PIUTANG' => 94900]);
 
         Arh::where('NOFAKTUR', 'FJO2026000001')->update(['BAYAR' => 100]);
+        $this->getJson(route('rent-pendingin-invoice-gen.show', 'FJO2026000001'))
+            ->assertUnprocessable()
+            ->assertJsonPath('status', false)
+            ->assertJsonPath('message', 'Invoice sudah memiliki pembayaran. Silakan hubungi admin.');
         $this->get(route('rent-pendingin-invoice-gen.edit', 'FJO2026000001'))
             ->assertRedirect(route('rent-pendingin-invoice-gen.index'))
             ->assertSessionHas('error');
+    }
+
+    public function test_edit_list_loads_legacy_invoice_values_and_modal_customer_prices(): void
+    {
+        $this->loginWithInvoicePermissions();
+        $row = $this->createSj('REN-001', [
+            'JENIS' => 'REN',
+            'INVOICE' => 'FJO2026000001',
+            'TGLINVOICE' => '2026-10-29',
+            'TGLJT' => '2026-11-12',
+            'PIUTANG' => 95000,
+            'BAYAR' => 25000,
+            'DISC' => 10,
+            'NDISC' => 12000,
+            'DC' => 5000,
+            'PPN' => 11,
+        ]);
+        $this->createSj('REN-UNLOADED', [
+            'JENIS' => 'REN',
+            'NOMUAT' => null,
+            'INVOICE' => 'FJO2026000002',
+        ]);
+        Arh::create([
+            'NOFAKTUR' => 'FJO2026000001',
+            'TGLFAKTUR' => '2026-10-29',
+            'TGLJT' => '2026-11-12',
+            'CUSTOMER' => 'Customer Test',
+            'PIUTANG' => 95000,
+            'BAYAR' => 0,
+            'SALDO' => 120000,
+        ]);
+        Kwitansi::create([
+            'FDOK_TRANS' => 'FJO2026000001',
+            'TOTAL' => 120000,
+            'PPN' => 11,
+            'DISC' => 10,
+            'NDISC' => 12000,
+        ]);
+        Mcustomer::create(['CUSTOMER' => 'CUS-001', 'NAMACUST' => 'Customer Test']);
+        Kendaraan::create(['KODE' => 'KD-001', 'NAMA' => 'Kendaraan Uji']);
+        Pricedingincus::create([
+            'KODECUS' => 'CUS-001',
+            'KODEDGN' => 'DGN-001',
+            'KODE' => 'KD-001',
+            'ITEM' => 'Sewa ruang pendingin',
+            'PERIODE' => 'Bulanan',
+            'PLAT' => 'DK 1234 XX',
+            'JENIS' => '1',
+            'HARGA' => 175000,
+        ]);
+
+        $this->get(route('rent-pendingin-invoice-gen.index'))
+            ->assertOk()
+            ->assertSee('transaksiRentPendinginInvoiceEditModal')
+            ->assertSee('transaksiRentPendinginInvoiceEditBtn_FJO2026000001')
+            // Legacy edit listing did not require NOMUAT to be populated.
+            ->assertSee('FJO2026000002')
+            // Legacy listing derives payment as GRAND minus PIUTANG.
+            ->assertSee('25.000');
+
+        $this->getJson(route('rent-pendingin-invoice-gen.show', 'FJO2026000001'))
+            ->assertOk()
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('master.subtotal', 120000)
+            ->assertJsonPath('master.piutang', 95000)
+            ->assertJsonPath('master.bayar', 25000)
+            ->assertJsonPath('master.nosj', $row->NOSJ);
+
+        $this->getJson(route('rent-pendingin-invoice-gen.prices', 'CUS-001'))
+            ->assertOk()
+            ->assertJsonPath('customer_nama', 'Customer Test')
+            ->assertJsonPath('data.0.ITEM', 'Sewa ruang pendingin')
+            ->assertJsonPath('data.0.nama_kendaraan', 'Kendaraan Uji');
+
+        $this->putJson(route('rent-pendingin-invoice-gen.update', 'FJO2026000001'), [
+            'item' => 'Sewa ruang terkoreksi',
+            'jumlah' => 2,
+            'harga' => 50000,
+            'disc' => 10,
+            'del_charge' => 5000,
+            'ppn' => 11,
+            'bayar' => 10000,
+            'tgl_jt' => '2026-11-15',
+            'keterangan' => 'Edit melalui modal',
+        ])->assertOk()
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('redirect_url', route('rent-pendingin-invoice.show', 'FJO2026000001'));
+
+        $this->assertDatabaseHas('expedisis', [
+            'id' => $row->id,
+            'PESANAN' => 'Sewa ruang terkoreksi',
+            'NDISC' => 10000,
+            'TOTAL' => 90000,
+            'GRAND' => 104900,
+            'BAYAR' => 10000,
+            'PIUTANG' => 94900,
+        ]);
+        $this->assertDatabaseHas('arh', ['NOFAKTUR' => 'FJO2026000001', 'PIUTANG' => 94900]);
+        $this->assertDatabaseHas('kwitansi', [
+            'FDOK_TRANS' => 'FJO2026000001',
+            'TOTAL' => 104900,
+            'PPN' => 11,
+            'DISC' => 10,
+            'NDISC' => 10000,
+        ]);
     }
 
     private function loginWithInvoicePermissions(): User
