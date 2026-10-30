@@ -747,8 +747,8 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     |   sidebar_coolroom_edit → coolroom-invoice-gen.edit
     */
     Route::resource('coolroom', CoolroomController::class);
-    Route::get('coolroom/print/pdf', [CoolroomController::class, 'print'])
-        ->name('coolroom.print.pdf');
+    Route::get('coolroom/{nosj}/pdf', [CoolroomController::class, 'pdf'])
+        ->name('coolroom.pdf');
     Route::post('coolroom/customer/search', [CoolroomController::class, 'getDataCustomer'])
         ->name('coolroom.customer.search');
 
