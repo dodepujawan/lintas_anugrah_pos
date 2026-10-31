@@ -165,12 +165,12 @@ $ php artisan migrate --force
 - AJAX routes: customer lookup, driver lookup, kendaraan data, COA autocomplete, rekening pilih, area CRUD
 - PDF/Print routes: surat jalan, muat, invoice, kwitansi
 
-### 4.2 Menu Registration (28 items) ✅
+### 4.2 Menu Registration (29 items) ✅
 | Section | Menu Items |
 |---|---|
 | Dashboard | `dashboard` |
 | Master | customer, driver, kendaraan, supplier, price×4, service, area |
-| Transaksi | expedisi, invoice eks, edit-invoice eks, kwitansi eks, rent pendingin, rent invoice, rent edit, rent kwitansi, coolroom, coolroom invoice, coolroom edit, coolroom kwitansi |
+| Transaksi | expedisi, invoice eks, edit-invoice eks, kwitansi eks, rent pendingin, rent invoice, rent edit, rent kwitansi, coolroom, coolroom invoice, edit invoice coolroom, coolroom kwitansi |
 | Laporan | kwitansi history |
 | Extra | pajak, rekening, signature |
 | Akuntansi | dashboard (link) |
@@ -179,7 +179,7 @@ $ php artisan migrate --force
 
 ## 👁️ FASE 5: Views (55% — IN PROGRESS)
 
-### 5.1 Created (16 dirs + 1 PDF) ✅
+### 5.1 Created (17 dirs + 2 PDF) ✅
 - `expedisi/index.blade.php` — list + filter + pagination
 - `expedisi/create.blade.php` — form SJ + AJAX customer lookup
 - `expedisi/show.blade.php` — detail view
@@ -197,6 +197,7 @@ $ php artisan migrate --force
 - `expedisi-invoice/show-edit.blade.php` ⭐ (+baru)
 - `expedisi-invoice/print/text.blade.php` ⭐ (+baru)
 - `expedisi-invoice/pdf/index.blade.php` — PDF template ⭐ (+baru)
+- `coolroom-invoice/index, generate, show, edit, show-edit, pdf/index` — generation, edit list/form, detail, dan PDF
 - `expedisi-kwitansi/index.blade.php` (+debug attrs, fixed Sisa calc)
 - `expedisi-kwitansi/pdf/index.blade.php` — PDF template ⭐ (+baru)
 - `kwitansi-history/index.blade.php` — all kwitansi + export
@@ -210,7 +211,6 @@ $ php artisan migrate --force
 - `rent-pendingin-kwitansi/index.blade.php` + pdf
 - `coolroom/create.blade.php` + `edit.blade.php`
 - `coolroom/pdf/index.blade.php` — PDF template
-- `coolroom-invoice/` (show, edit, pdf)
 
 ---
 
@@ -319,6 +319,8 @@ $ php artisan test --filter=Transaksi
 | 2026-10-30 17:45 | Coolroom resource direkonsiliasi dengan legacy | Ditambahkan migration kompatibilitas baru (migration lama tidak diubah), field legacy `CUSTOMER_KODE`/`TGLSJ`/`BOXING`/`SUBTOTAL`/`DPP`/`NPPN`/`INVOICE`/pembayaran dan presisi jumlah 3 desimal; CRUD menghitung ulang nilai di server, membuat NOSJ `SCmmyy#####`, serta menolak edit/hapus data ber-invoice. Index memfilter data belum invoice; create/edit/show, customer picker, pratinjau hitungan, dan PDF Surat Jalan tersedia. | `CoolroomFlowTest` 3/3 (45 assertions), `ModelTest` 6/6, route list dan Blade cache sukses. MySQL `migrate:status` tidak bisa diverifikasi karena koneksi `192.168.1.7:3306` refused; migration tidak dijalankan pada server. |
 | 2026-10-30 19:00 | Coolroom invoice diselaraskan dengan Rent Pendingin dan legacy | Alur POST invoice kini terhubung ke controller, menjaga nomor `FCOyyyy######`, parsing nominal rupiah lokal, guard pembayaran/duplikasi, update `coolrooms` + ARH `SOURCE=Coolroom`, dan delete ARH saat lunas mengikuti legacy. Daftar membaca Coolroom supaya invoice lunas tetap ada; ditambahkan detail printable, PDF, direct-print text, export Excel dengan filter tanggal/status/customer, serta daftar edit dan sync kwitansi. Halaman utama memakai kartu ringkasan, filter, tabel responsif, dan form Fetch tanpa jQuery; simpan sukses menuju detail invoice. | `CoolroomInvoiceFlowTest` 4/4; gabungan Coolroom, Model, Rent Pendingin, dan Expedisi 27/27 (261 assertions); route/view cache dan lint sukses. |
 | 2026-10-31 02:10 | Coolroom kwitansi dipulihkan ke alur legacy | Index mengambil invoice dari `coolrooms` (`INVOICE` terisi, `GRAND > 0`) dan memfilter `KWT`; proses menerima payload `invoice`, mengisi `KWT`/`TGLKW` pada semua baris invoice, membuat record kolom legacy dengan `JENIS=COL`, dan menghasilkan nomor `KWyyyy#######`. Pembatalan menerima `kwt`, mengosongkan hanya field kwitansi, menghapus record `COL`, serta tidak mengubah `BAYAR`/`PIUTANG` atau membuat jurnal. Ditambahkan MVC view Bootstrap/pagination, direct-print text, PDF DomPDF, dan route eksplisit; tidak ada perubahan schema. | `CoolroomKwitansiFlowTest` 3/3 (29 assertions), route list dan Blade cache sukses. Seluruh suite: 175 passed, 43 failed pada modul existing di luar Coolroom Kwitansi. |
+| 2026-10-31 10:47 | Coolroom invoice edit dipoles dan menu sidebar didaftarkan | Route `/coolroom-invoice-gen` ditambahkan sebagai menu sidebar non-parameter dengan hak akses yang disalin dari menu Invoice Coolroom; Bayar pada tabel edit dihitung sebagai `GRAND - PIUTANG` sesuai legacy. Ditambahkan modal Panduan Edit dan regression test menu, nilai Bayar, serta redirect sukses ke `/coolroom-invoice/{invoice}` berikut flash message. | `CoolroomInvoiceFlowTest` 5/5 (59 assertions), PHP lint/Pint, route cache, dan Blade cache sukses. |
+| 2026-10-31 11:11 | Format angka dan pembulatan edit Coolroom diseragamkan | Jumlah KG, harga/bayar, diskon, dan PPN pada form edit kini menerima format Indonesia (titik ribuan, koma desimal); nol desimal yang tidak perlu tidak lagi dipaksa tampil dan unit KG dipisah. Server serta preview memakai integer berskala yang sama untuk membulatkan subtotal, diskon, DPP, PPN, dan grand sesuai urutan legacy. List generate juga merapikan jumlah serta persentase. | `CoolroomInvoiceFlowTest` 6/6 (74 assertions), gabungan test `--filter=Coolroom` 13/13 (149 assertions), PHP syntax check, dan Blade cache sukses. |
 
 ## 📊 Migration File Status (untuk user)
 
@@ -327,6 +329,7 @@ $ php artisan test --filter=Transaksi
 - `2026_10_16_093000_add_price_legacy_columns.php` ✅ (hanya pricecus kolom)
 
 ### BARU — belum di-run, jalankan `php artisan migrate`:
+- `2026_10_31_000001_register_coolroom_invoice_edit_menu.php` — register menu sidebar Edit Invoice Coolroom dan salin hak akses dari menu invoice Coolroom
 - `2026_10_16_091500_add_fno_prk_som_to_kendaraans.php` — FNO_PRK_S/O/M untuk kendaraans
 - `2026_10_16_103000_add_price_legacy_columns_v2.php` — pricecushis kolom + prices kolom tambahan + TANGGAL date fix (MySQL only)
 - `2026_10_16_103500_add_pricedingin_legacy_columns.php` — pricedingins + pricedingincus + pricedinginhis kolom
@@ -335,7 +338,7 @@ $ php artisan test --filter=Transaksi
 ```bash
 cd /home/dode/project/lintas_anugrah_pos/src
 php artisan config:clear && php artisan cache:clear
-php artisan migrate  # akan jalan 3 migration baru di atas
+php artisan migrate  # akan menjalankan migration baru yang belum diterapkan
 ```
 
 ---

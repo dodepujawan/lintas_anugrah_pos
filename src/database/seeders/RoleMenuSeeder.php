@@ -25,6 +25,7 @@ class RoleMenuSeeder extends Seeder
         $menus = [
             ['name' => 'Dashboard', 'route_name' => 'dashboard', 'section' => 'Menu Utama', 'icon' => 'bi bi-grid-1x2', 'sort_order' => 1],
             ['name' => 'Register User', 'route_name' => 'register', 'section' => 'Setting', 'icon' => 'bi bi-person-plus', 'sort_order' => 2, 'is_sidebar' => false],
+            ['name' => 'Edit Invoice Coolroom', 'route_name' => 'coolroom-invoice-gen.index', 'section' => 'Transaksi', 'icon' => 'bi bi-pencil-square', 'sort_order' => 122],
             ['name' => 'Saldo Awal Akun', 'route_name' => 'saldo-awal', 'section' => 'Saldo Awal', 'icon' => 'bi bi-wallet2', 'sort_order' => 1, 'description' => 'Input saldo awal akun pembukuan.'],
             ['name' => 'Jurnal Umum', 'route_name' => 'jurnal', 'section' => 'Transaksi', 'icon' => 'bi bi-receipt', 'sort_order' => 2],
             ['name' => 'Jurnal Penyesuaian', 'route_name' => 'jurnal-penyesuaian', 'section' => 'Transaksi', 'icon' => 'bi bi-journal-text', 'sort_order' => 3],

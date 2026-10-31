@@ -3,6 +3,11 @@
 @section('title', 'Generate Invoice Coolroom')
 
 @section('content')
+@php
+    $formatQuantity = static function ($value) {
+        return rtrim(rtrim(number_format((float) $value, 3, ',', '.'), '0'), ',');
+    };
+@endphp
 <div class="container-fluid" data-debug="transaksiCoolroomInvoiceGenerate">
     @if (session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif
     @if (session('error'))<div class="alert alert-danger" role="alert">{{ session('error') }}</div>@endif
@@ -79,7 +84,7 @@
                                 <td class="font-monospace fw-semibold">{{ $row->NOSJ }}</td>
                                 <td>{{ $row->TGLSJ?->format('d/m/Y') ?? '-' }}</td>
                                 <td><div class="fw-semibold">{{ $row->CUSTOMER }}</div><div class="small text-muted">{{ $row->CUSTOMER_KODE }}</div></td>
-                                <td class="text-end">{{ number_format((float) $row->JUMLAH, 3, ',', '.') }} {{ $row->UNIT ?: 'KG' }}</td>
+                                <td class="text-end text-nowrap">{{ $formatQuantity($row->JUMLAH) }} <span class="text-muted">{{ $row->UNIT ?: 'KG' }}</span></td>
                                 <td class="text-end fw-semibold">Rp {{ number_format((float) $row->GRAND, 0, ',', '.') }}</td>
                                 <td class="font-monospace">{{ $row->INVOICE ?: '-' }}</td>
                                 <td class="text-end pe-3">
@@ -163,6 +168,7 @@
     const storeUrl = @json(route('coolroom-invoice.store'));
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
     const money = value => Number(value || 0).toLocaleString('id-ID');
+    const percent = value => Number(value || 0).toLocaleString('id-ID', {maximumFractionDigits: 2});
     const list = document.getElementById('table_coolroom_inv');
     const form = document.getElementById('form_coolroom_inv');
     const submit = document.getElementById('proses_coolroom_inv');
@@ -218,10 +224,10 @@
             document.getElementById('jumlah_coolroom_inv').value = Number(data.jumlah || 0).toLocaleString('id-ID', {maximumFractionDigits: 3});
             document.getElementById('harga_coolroom_inv').value = money(data.harga);
             document.getElementById('subtotal_coolroom_inv').value = money(data.sub_total);
-            document.getElementById('disc_coolroom_inv').value = data.disc_persen || 0;
+            document.getElementById('disc_coolroom_inv').value = percent(data.disc_persen);
             document.getElementById('ndisc_coolroom_inv').value = money(data.disc_rp);
             document.getElementById('dpp_coolroom_inv').value = money(data.dpp);
-            document.getElementById('ppn_coolroom_inv').value = data.ppn || 0;
+            document.getElementById('ppn_coolroom_inv').value = percent(data.ppn);
             document.getElementById('nppn_coolroom_inv').value = money(data.ppn_rp);
             document.getElementById('grand_coolroom_inv').value = money(data.grand);
             document.getElementById('bayar_coolroom_inv').value = Number(data.bayar || 0);

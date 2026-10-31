@@ -378,12 +378,18 @@ class CoolroomGenerateInvoiceController extends Controller
 
     public function updateEditInvoiceCoolroom(Request $request, $noInvoice)
     {
+        foreach (['jumlah' => 3, 'harga' => 0, 'disc' => 2, 'ppn' => 2, 'bayar' => 0] as $field => $scale) {
+            if ($request->exists($field)) {
+                $request->merge([$field => $this->normalizeLocalizedNumber($request->input($field), $scale)]);
+            }
+        }
+
         $validated = $request->validate([
-            'jumlah' => ['required', 'numeric', 'min:0'],
-            'harga' => ['required', 'numeric', 'min:0'],
+            'jumlah' => ['required', 'numeric', 'min:0', 'max:999999999.999'],
+            'harga' => ['required', 'numeric', 'min:0', 'max:999999999999'],
             'disc' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'ppn' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'bayar' => ['nullable', 'numeric', 'min:0'],
+            'bayar' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
             'tgl_jt' => ['nullable', 'date'],
             'keterangan' => ['nullable', 'string', 'max:500'],
         ]);
@@ -396,27 +402,35 @@ class CoolroomGenerateInvoiceController extends Controller
                     throw new \RuntimeException('Invoice sudah memiliki pembayaran. Silakan hubungi admin.');
                 }
 
-                $jumlah = (float) $validated['jumlah'];
-                $harga = (float) $validated['harga'];
-                $discPersen = (float) ($validated['disc'] ?? 0);
-                $ppnPersen = (float) ($validated['ppn'] ?? 0);
+                $jumlahScaled = $this->toScaledInteger($validated['jumlah'], 3);
+                $harga = (int) $validated['harga'];
+                $discScaled = $this->toScaledInteger($validated['disc'] ?? '0', 2);
+                $ppnScaled = $this->toScaledInteger($validated['ppn'] ?? '0', 2);
                 $boxing = $request->boolean('boxing');
 
-                $subtotal = $boxing ? $harga : $jumlah * $harga;
-                $ndisc = round($subtotal * ($discPersen / 100), 0);
-                $dpp = round($subtotal - $ndisc, 0);
-                $nppn = round($dpp * ($ppnPersen / 100), 0);
-                $grand = round($dpp + $nppn, 0);
-
-                $bayarInput = trim((string) ($validated['bayar'] ?? '0'));
-                if (str_contains($bayarInput, '-')) {
-                    throw new \RuntimeException('Nominal bayar tidak valid');
+                $maxSubtotalScaled = 999_999_999_999_000;
+                if (! $boxing && $harga > 0 && $jumlahScaled > intdiv($maxSubtotalScaled, $harga)) {
+                    throw new \RuntimeException('Subtotal melebihi batas maksimum penyimpanan.');
                 }
-                $bayar = (int) preg_replace('/\D+/', '', $bayarInput);
+                $subtotalScaled = $boxing ? $harga * 1000 : $jumlahScaled * $harga;
+                $subtotal = $subtotalScaled / 1000;
+                $ndisc = $this->roundMultiplyDivide($subtotalScaled, $discScaled, 10_000_000);
+                $dpp = $this->roundDivide($subtotalScaled - ($ndisc * 1000), 1000);
+                $nppn = $this->roundMultiplyDivide($dpp, $ppnScaled, 10_000);
+                $grand = $dpp + $nppn;
+
+                if ($grand > 999_999_999_999) {
+                    throw new \RuntimeException('Grand total melebihi batas maksimum penyimpanan.');
+                }
+
+                $jumlah = $jumlahScaled / 1000;
+                $discPersen = $discScaled / 100;
+                $ppnPersen = $ppnScaled / 100;
+                $bayar = (int) ($validated['bayar'] ?? 0);
                 if ($grand < $bayar) {
                     throw new \RuntimeException('Grand tidak boleh lebih kecil dari pembayaran yang sudah diterima');
                 }
-                $piutang = round($grand - $bayar);
+                $piutang = $grand - $bayar;
 
                 $coolroom->update([
                     'BOXING' => $boxing,
@@ -613,6 +627,126 @@ class CoolroomGenerateInvoiceController extends Controller
         );
 
         return Excel::download($export, 'coolroom-' . $validated['status_invoice'] . '.xlsx');
+    }
+
+    private function normalizeLocalizedNumber(mixed $value, int $scale): mixed
+    {
+        $canonicalNumber = is_int($value) || is_float($value);
+        if ($value === null || is_int($value) || is_float($value)) {
+            $input = is_float($value)
+                ? rtrim(rtrim(sprintf('%.12F', $value), '0'), '.')
+                : (string) $value;
+        } elseif (is_string($value)) {
+            $input = preg_replace('/^rp\s*/i', '', trim($value));
+            $input = str_replace([" ", "\u{00A0}"], '', $input);
+        } else {
+            return $value;
+        }
+
+        if ($input === '') {
+            return null;
+        }
+
+        $original = $input;
+        $negative = str_starts_with($input, '-');
+        if ($negative || str_starts_with($input, '+')) {
+            $input = substr($input, 1);
+        }
+
+        if ($input === '' || preg_match('/[^0-9.,]/', $input)) {
+            return $original;
+        }
+
+        $commaPosition = strrpos($input, ',');
+        $dotPosition = strrpos($input, '.');
+        $fraction = '';
+
+        if ($canonicalNumber) {
+            if (substr_count($input, '.') > 1) {
+                return $original;
+            }
+            [$integerPart, $fraction] = array_pad(explode('.', $input, 2), 2, '');
+        } elseif ($commaPosition !== false && $dotPosition !== false) {
+            $decimalSeparator = $commaPosition > $dotPosition ? ',' : '.';
+            $groupingSeparator = $decimalSeparator === ',' ? '.' : ',';
+            $decimalPosition = strrpos($input, $decimalSeparator);
+            $integerPart = substr($input, 0, $decimalPosition);
+            $fraction = substr($input, $decimalPosition + 1);
+            $groupingPattern = $groupingSeparator === '.'
+                ? '/^\d{1,3}(?:\.\d{3})+$/'
+                : '/^\d{1,3}(?:,\d{3})+$/';
+            if (str_contains($integerPart, $groupingSeparator) && ! preg_match($groupingPattern, $integerPart)) {
+                return $original;
+            }
+            if (str_contains($integerPart, $decimalSeparator)) {
+                return $original;
+            }
+            $integerPart = str_replace($groupingSeparator, '', $integerPart);
+        } elseif ($commaPosition !== false) {
+            if (substr_count($input, ',') > 1 && preg_match('/^\d{1,3}(?:,\d{3})+$/', $input)) {
+                $integerPart = str_replace(',', '', $input);
+            } else {
+                $integerPart = str_replace(',', '', substr($input, 0, $commaPosition));
+                $fraction = substr($input, $commaPosition + 1);
+            }
+        } elseif ($dotPosition !== false) {
+            if (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $input)) {
+                $integerPart = str_replace('.', '', $input);
+            } elseif (substr_count($input, '.') > 1) {
+                return $original;
+            } else {
+                $integerPart = str_replace('.', '', substr($input, 0, $dotPosition));
+                $fraction = substr($input, $dotPosition + 1);
+            }
+        } else {
+            $integerPart = $input;
+        }
+
+        if ($integerPart === '') {
+            $integerPart = '0';
+        }
+        if (! ctype_digit($integerPart) || ($fraction !== '' && ! ctype_digit($fraction)) || strlen($integerPart) > 12) {
+            return $original;
+        }
+
+        $integerPart = ltrim($integerPart, '0') ?: '0';
+        $factor = 10 ** $scale;
+        $keptFraction = str_pad(substr($fraction, 0, $scale), $scale, '0');
+        $scaledValue = ((int) $integerPart * $factor) + ($scale > 0 ? (int) $keptFraction : 0);
+
+        if (strlen($fraction) > $scale && (int) $fraction[$scale] >= 5) {
+            $scaledValue++;
+        }
+
+        $integerPart = (string) intdiv($scaledValue, $factor);
+        if ($scale === 0) {
+            return ($negative ? '-' : '').$integerPart;
+        }
+
+        $fractionPart = str_pad((string) ($scaledValue % $factor), $scale, '0', STR_PAD_LEFT);
+
+        return ($negative ? '-' : '').$integerPart.'.'.$fractionPart;
+    }
+
+    private function toScaledInteger(string|int|float $value, int $scale): int
+    {
+        [$integer, $fraction] = array_pad(explode('.', (string) $value, 2), 2, '');
+
+        return ((int) $integer * (10 ** $scale))
+            + ($scale > 0 ? (int) str_pad(substr($fraction, 0, $scale), $scale, '0') : 0);
+    }
+
+    private function roundMultiplyDivide(int $value, int $factor, int $divisor): int
+    {
+        $whole = intdiv($value, $divisor);
+        $remainder = $value % $divisor;
+
+        return ($whole * $factor) + intdiv(($remainder * $factor) + intdiv($divisor, 2), $divisor);
+    }
+
+    private function roundDivide(int $value, int $divisor): int
+    {
+        return intdiv($value + intdiv($divisor, 2), $divisor);
     }
 
     private function generateInvoiceCoolroom(): string

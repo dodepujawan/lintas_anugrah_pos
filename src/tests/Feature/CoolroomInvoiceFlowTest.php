@@ -5,16 +5,33 @@ namespace Tests\Feature;
 use App\Models\Arh;
 use App\Models\Coolroom;
 use App\Models\Kwitansi;
-use App\Models\Menu;
 use App\Models\Mcustomer;
+use App\Models\Menu;
 use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\RoleMenuSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CoolroomInvoiceFlowTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_coolroom_invoice_edit_route_is_registered_for_the_sidebar(): void
+    {
+        $this->seed(RoleMenuSeeder::class);
+
+        $this->assertDatabaseHas('menus', [
+            'route_name' => 'coolroom-invoice-gen.index',
+            'name' => 'Edit Invoice Coolroom',
+            'is_sidebar' => true,
+        ]);
+        $this->assertDatabaseHas('role_menu', [
+            'role_id' => Role::where('name', 'Administrator')->value('id'),
+            'menu_id' => Menu::where('route_name', 'coolroom-invoice-gen.index')->value('id'),
+            'can_view' => true,
+        ]);
+    }
 
     public function test_generate_uses_legacy_rupiah_parsing_creates_arh_and_redirects_to_printable_detail(): void
     {
@@ -25,6 +42,8 @@ class CoolroomInvoiceFlowTest extends TestCase
         $this->get(route('coolroom-invoice.create'))
             ->assertOk()
             ->assertSee('transaksiCoolroomInvoiceGenerate')
+            ->assertSeeText('2 KG')
+            ->assertDontSeeText('2,000')
             ->assertSee('Export Excel');
 
         $this->postJson(route('coolroom-invoice.store'), [
@@ -142,13 +161,18 @@ class CoolroomInvoiceFlowTest extends TestCase
         $coolroom = $this->createCoolroom('SC102600004', 100000, [
             'INVOICE' => 'FCO2026000010',
             'TGLINVOICE' => '2026-10-15',
-            'PIUTANG' => 100000,
+            'JUMLAH' => 12,
+            'HARGA' => 20000,
+            'DISC' => 5,
+            'PPN' => 11,
+            'PIUTANG' => 80000,
+            'BAYAR' => 5000,
         ]);
         Arh::create([
             'NOFAKTUR' => $coolroom->INVOICE,
             'TGLFAKTUR' => '2026-10-15',
             'CUSTOMER' => 'Coolroom Customer',
-            'PIUTANG' => 100000,
+            'PIUTANG' => 80000,
             'BAYAR' => 0,
             'SALDO' => 30,
             'SOURCE' => 'Coolroom',
@@ -158,20 +182,32 @@ class CoolroomInvoiceFlowTest extends TestCase
         $this->get(route('coolroom-invoice-gen.index'))
             ->assertOk()
             ->assertSee('Edit Invoice Coolroom')
-            ->assertSee($coolroom->INVOICE);
+            ->assertSee('Panduan Edit Invoice Coolroom')
+            ->assertSee($coolroom->INVOICE)
+            ->assertSee('Rp 20.000')
+            ->assertDontSee('Rp 5.000');
         $this->get(route('coolroom-invoice-gen.edit', $coolroom->INVOICE))
             ->assertOk()
-            ->assertSee('transaksiCoolroomInvoiceEditForm');
+            ->assertSee('transaksiCoolroomInvoiceEditForm')
+            ->assertSee('value="12"', false)
+            ->assertSee('value="5"', false)
+            ->assertSee('value="11"', false)
+            ->assertDontSee('value="12.000"', false);
 
         $this->put(route('coolroom-invoice-gen.update', $coolroom->INVOICE), [
-            'jumlah' => 2.5,
-            'harga' => 20000,
-            'disc' => 5,
-            'ppn' => 11,
-            'bayar' => 10000,
+            'jumlah' => '2,500',
+            'harga' => '20.000',
+            'disc' => '5,00',
+            'ppn' => '11,00',
+            'bayar' => '10.000',
             'tgl_jt' => '2026-11-15',
             'keterangan' => 'Edit invoice Coolroom',
-        ])->assertRedirect(route('coolroom-invoice.show', $coolroom->INVOICE));
+        ])->assertRedirect(route('coolroom-invoice.show', $coolroom->INVOICE))
+            ->assertSessionHas('success', 'Invoice coolroom berhasil diperbarui.');
+
+        $this->get(route('coolroom-invoice.show', $coolroom->INVOICE))
+            ->assertOk()
+            ->assertSee('Invoice coolroom berhasil diperbarui.');
 
         $this->assertDatabaseHas('coolrooms', [
             'id' => $coolroom->id,
@@ -199,6 +235,65 @@ class CoolroomInvoiceFlowTest extends TestCase
         $this->get(route('coolroom-invoice-gen.edit', $coolroom->INVOICE))
             ->assertRedirect(route('coolroom-invoice-gen.index'))
             ->assertSessionHas('error');
+    }
+
+    public function test_localized_decimal_values_use_legacy_half_up_rounding(): void
+    {
+        $this->loginWithCoolroomInvoicePermissions();
+        $this->createCustomer();
+        $coolroom = $this->createCoolroom('SC102600005', 100000, [
+            'INVOICE' => 'FCO2026000011',
+            'TGLINVOICE' => '2026-10-15',
+        ]);
+        Arh::create([
+            'NOFAKTUR' => $coolroom->INVOICE,
+            'TGLFAKTUR' => '2026-10-15',
+            'CUSTOMER' => 'Coolroom Customer',
+            'PIUTANG' => 100000,
+            'BAYAR' => 0,
+            'SOURCE' => 'Coolroom',
+        ]);
+
+        $this->put(route('coolroom-invoice-gen.update', $coolroom->INVOICE), [
+            'jumlah' => '0,005',
+            'harga' => '100',
+            'disc' => '5,00',
+            'ppn' => '11,00',
+            'bayar' => '',
+        ])->assertRedirect(route('coolroom-invoice.show', $coolroom->INVOICE));
+
+        $this->assertDatabaseHas('coolrooms', [
+            'id' => $coolroom->id,
+            'JUMLAH' => 0.005,
+            'NDISC' => 0,
+            'DPP' => 1,
+            'NPPN' => 0,
+            'GRAND' => 1,
+            'BAYAR' => 0,
+            'PIUTANG' => 1,
+        ]);
+
+        $this->putJson(route('coolroom-invoice-gen.update', $coolroom->INVOICE), [
+            'jumlah' => 0.005,
+            'harga' => 100,
+            'disc' => 5,
+            'ppn' => 11,
+            'bayar' => 0,
+        ])->assertRedirect(route('coolroom-invoice.show', $coolroom->INVOICE));
+
+        $this->putJson(route('coolroom-invoice-gen.update', $coolroom->INVOICE), [
+            'jumlah' => '1.2.3',
+            'harga' => '100',
+            'disc' => '5,00',
+            'ppn' => '11,00',
+            'bayar' => '0',
+        ])->assertUnprocessable()->assertJsonValidationErrors('jumlah');
+
+        $this->assertDatabaseHas('coolrooms', [
+            'id' => $coolroom->id,
+            'JUMLAH' => 0.005,
+            'GRAND' => 1,
+        ]);
     }
 
     public function test_export_requires_legacy_status_and_date_filters(): void
