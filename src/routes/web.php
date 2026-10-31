@@ -769,7 +769,16 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     Route::put('coolroom-invoice-gen/{noInvoice}', [CoolroomGenerateInvoiceController::class, 'updateEditInvoiceCoolroom'])
         ->name('coolroom-invoice-gen.update');
 
-    Route::resource('coolroom-kwitansi', CoolroomKwitansiController::class);
+    Route::get('coolroom-kwitansi', [CoolroomKwitansiController::class, 'index'])
+        ->name('coolroom-kwitansi.index');
+    Route::post('coolroom-kwitansi/proses', [CoolroomKwitansiController::class, 'store'])
+        ->name('coolroom-kwitansi.store');
+    Route::post('coolroom-kwitansi/destroy', [CoolroomKwitansiController::class, 'destroy'])
+        ->name('coolroom-kwitansi.destroy');
+    Route::get('coolroom-kwitansi/kwitansi/{noKwt}/text', [CoolroomKwitansiController::class, 'printKwitansiText'])
+        ->name('coolroom-kwitansi.text');
+    Route::get('coolroom-kwitansi/kwitansi/{noKwt}/pdf', [CoolroomKwitansiController::class, 'printKwitansi'])
+        ->name('coolroom-kwitansi.pdf');
 
     /*
     | Kwitansi History

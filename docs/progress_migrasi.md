@@ -22,10 +22,10 @@ FASE 1: Migration Foundation          [██████████] 100% ✅ 
 FASE 2: Models                        [██████████] 100% ✅ Selesai (17 file)
 FASE 3: Controllers                   [██████████] 100% ✅ Selesai (21 file)
 FASE 4: Routes + Menu registration    [██████████] 100% ✅ Selesai (141 routes, 28 menu)
-FASE 5: Views                         [███████░░░░░]  70% (16/25 dirs + 4/9 PDF) — Step 1 (EKS) COMPLETE, Step 2 (REN) pending review
+FASE 5: Views                         [████████░░░░]  74% (17/25 dirs + 5/9 PDF) — Step 1 (EKS) COMPLETE, Step 2 (REN) pending review
 FASE 6: Testing                       [██████████] 100% ✅ 13/13 tests passed (61 assertions)
 ────────────────────────────────────────────────────────────
-TOTAL                              [███████░░░░░░]  84%
+TOTAL                              [████████░░░░░]  86%
 ```
 
 **Update 2026-10-18:** Price module enhanced — auto KODE generation, KUNCI generation, pricecus sync, simplified forms, delete button with transaction check for kendaraan.
@@ -211,7 +211,6 @@ $ php artisan migrate --force
 - `coolroom/create.blade.php` + `edit.blade.php`
 - `coolroom/pdf/index.blade.php` — PDF template
 - `coolroom-invoice/` (show, edit, pdf)
-- `coolroom-kwitansi/index.blade.php` + pdf
 
 ---
 
@@ -319,6 +318,7 @@ $ php artisan test --filter=Transaksi
 | 2026-10-30 15:20 | Edit Invoice Rent Pendingin diseragamkan dengan Expedisi | Daftar edit REN kini membuka modal melalui Fetch JSON, termasuk picker harga customer dari `pricedingincus`; simpan memakai endpoint `PUT` yang mempertahankan hitungan legacy serta sinkronisasi `expedisis`/`arh`/`kwitansi`, lalu redirect ke detail invoice. Filter edit mengikuti legacy (tanpa syarat `NOMUAT`) dan Bayar ditampilkan sebagai `GRAND - PIUTANG`. | `RentPendinginInvoiceFlowTest` 4/4, `ExpedisiInvoiceGenerationTest` 10/10; route cache dan Blade cache sukses |
 | 2026-10-30 17:45 | Coolroom resource direkonsiliasi dengan legacy | Ditambahkan migration kompatibilitas baru (migration lama tidak diubah), field legacy `CUSTOMER_KODE`/`TGLSJ`/`BOXING`/`SUBTOTAL`/`DPP`/`NPPN`/`INVOICE`/pembayaran dan presisi jumlah 3 desimal; CRUD menghitung ulang nilai di server, membuat NOSJ `SCmmyy#####`, serta menolak edit/hapus data ber-invoice. Index memfilter data belum invoice; create/edit/show, customer picker, pratinjau hitungan, dan PDF Surat Jalan tersedia. | `CoolroomFlowTest` 3/3 (45 assertions), `ModelTest` 6/6, route list dan Blade cache sukses. MySQL `migrate:status` tidak bisa diverifikasi karena koneksi `192.168.1.7:3306` refused; migration tidak dijalankan pada server. |
 | 2026-10-30 19:00 | Coolroom invoice diselaraskan dengan Rent Pendingin dan legacy | Alur POST invoice kini terhubung ke controller, menjaga nomor `FCOyyyy######`, parsing nominal rupiah lokal, guard pembayaran/duplikasi, update `coolrooms` + ARH `SOURCE=Coolroom`, dan delete ARH saat lunas mengikuti legacy. Daftar membaca Coolroom supaya invoice lunas tetap ada; ditambahkan detail printable, PDF, direct-print text, export Excel dengan filter tanggal/status/customer, serta daftar edit dan sync kwitansi. Halaman utama memakai kartu ringkasan, filter, tabel responsif, dan form Fetch tanpa jQuery; simpan sukses menuju detail invoice. | `CoolroomInvoiceFlowTest` 4/4; gabungan Coolroom, Model, Rent Pendingin, dan Expedisi 27/27 (261 assertions); route/view cache dan lint sukses. |
+| 2026-10-31 02:10 | Coolroom kwitansi dipulihkan ke alur legacy | Index mengambil invoice dari `coolrooms` (`INVOICE` terisi, `GRAND > 0`) dan memfilter `KWT`; proses menerima payload `invoice`, mengisi `KWT`/`TGLKW` pada semua baris invoice, membuat record kolom legacy dengan `JENIS=COL`, dan menghasilkan nomor `KWyyyy#######`. Pembatalan menerima `kwt`, mengosongkan hanya field kwitansi, menghapus record `COL`, serta tidak mengubah `BAYAR`/`PIUTANG` atau membuat jurnal. Ditambahkan MVC view Bootstrap/pagination, direct-print text, PDF DomPDF, dan route eksplisit; tidak ada perubahan schema. | `CoolroomKwitansiFlowTest` 3/3 (29 assertions), route list dan Blade cache sukses. Seluruh suite: 175 passed, 43 failed pada modul existing di luar Coolroom Kwitansi. |
 
 ## 📊 Migration File Status (untuk user)
 
