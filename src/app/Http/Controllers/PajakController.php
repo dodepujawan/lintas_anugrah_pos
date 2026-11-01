@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Pajak;
 use Illuminate\Http\Request;
 
@@ -34,16 +33,27 @@ class PajakController extends Controller
             $validated
         );
 
-        return response()->json([
+        $response = [
             'success' => true,
+            'message' => 'Pengaturan pajak berhasil diperbarui.',
             'data' => $pajak,
-        ]);
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json($response);
+        }
+
+        return redirect()->route('pajak.get')->with('success', $response['message']);
     }
 
-    public function get()
+    public function get(Request $request)
     {
         $pajak = Pajak::where('is_active', true)->latest('updated_at')->first();
 
-        return response()->json($pajak);
+        if ($request->expectsJson()) {
+            return response()->json($pajak);
+        }
+
+        return view('pajak.index', compact('pajak'));
     }
 }

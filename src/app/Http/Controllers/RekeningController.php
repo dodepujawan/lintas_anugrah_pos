@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Rekening;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RekeningController extends Controller
 {
@@ -18,9 +18,11 @@ class RekeningController extends Controller
         $search = trim((string) $request->input('search'));
         $rekenings = Rekening::query()
             ->when($search, function ($query) use ($search) {
-                $query->where('BANK', 'like', "%{$search}%")
-                    ->orWhere('NOREK', 'like', "%{$search}%")
-                    ->orWhere('NAMA', 'like', "%{$search}%");
+                $query->where(function ($query) use ($search) {
+                    $query->where('BANK', 'like', "%{$search}%")
+                        ->orWhere('NOREK', 'like', "%{$search}%")
+                        ->orWhere('NAMA', 'like', "%{$search}%");
+                });
             })
             ->orderBy('BANK')
             ->paginate(20)
@@ -40,11 +42,10 @@ class RekeningController extends Controller
             'BANK' => 'required|string|max:40',
             'NOREK' => 'required|string|max:40',
             'NAMA' => 'nullable|string|max:40',
-            'AKTIF' => 'nullable|string|max:1',
         ]);
 
-        $user = $request->user()->name ?? 'system';
-        $validated['USER'] = $user;
+        $validated['USER'] = $request->user()->user_id ?? $request->user()->name ?? 'SYSTEM';
+        $validated['AKTIF'] = '0';
 
         Rekening::create($validated);
 
@@ -68,10 +69,9 @@ class RekeningController extends Controller
             'BANK' => 'required|string|max:40',
             'NOREK' => 'required|string|max:40',
             'NAMA' => 'nullable|string|max:40',
-            'AKTIF' => 'nullable|string|max:1',
         ]);
 
-        $validated['USER'] = $request->user()->name ?? 'system';
+        $validated['USER'] = $request->user()->user_id ?? $request->user()->name ?? 'SYSTEM';
 
         $rekening->update($validated);
 
@@ -87,10 +87,14 @@ class RekeningController extends Controller
             ->with('success', 'Rekening berhasil dihapus.');
     }
 
-    public function pilih(Request $request)
+    public function pilih(Rekening $rekening)
     {
-        $rekening = Rekening::find($request->route('id'));
+        DB::transaction(function () use ($rekening) {
+            Rekening::query()->update(['AKTIF' => '0']);
+            $rekening->update(['AKTIF' => '1']);
+        });
 
-        return response()->json($rekening);
+        return redirect()->route('rekening.index')
+            ->with('success', 'Rekening aktif berhasil diubah.');
     }
 }

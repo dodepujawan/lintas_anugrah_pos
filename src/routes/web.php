@@ -784,9 +784,10 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     | Kwitansi History
     |   sidebar_new_kwitansi → kwitansi-history.index
     */
-    Route::resource('kwitansi-history', KwitansiHistoryController::class);
     Route::get('kwitansi-history/export', [KwitansiHistoryController::class, 'exportKwitansi'])
         ->name('kwitansi-history.export');
+    Route::get('kwitansi-history', [KwitansiHistoryController::class, 'index'])
+        ->name('kwitansi-history.index');
 
     /*
     | Service
@@ -805,16 +806,16 @@ Route::middleware(['auth', 'verified', 'permission'])->group(function () {
     Route::get('pajak', [PajakController::class, 'get'])
         ->name('pajak.get');
     Route::put('pajak', [PajakController::class, 'update'])
-        ->name('pajak.update');
+        ->name('pajak.get.update');
 
     Route::resource('rekening', RekeningController::class);
-    Route::get('rekening/pilih/{id}', [RekeningController::class, 'pilih'])
-        ->name('rekening.pilih');
+    Route::post('rekening/{rekening}/pilih', [RekeningController::class, 'pilih'])
+        ->name('rekening.pilih.post');
 
     Route::get('signature', [SignatureController::class, 'get'])
         ->name('signature.get');
     Route::put('signature', [SignatureController::class, 'update'])
-        ->name('signature.update');
+        ->name('signature.get.update');
 
     Route::get('area', [AreaController::class, 'get'])
         ->name('area.get');
